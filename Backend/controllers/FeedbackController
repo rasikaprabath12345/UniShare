@@ -1,0 +1,56 @@
+const Feedback = require("../models/Feedback");
+
+// Create Feedback
+exports.createFeedback = async (req, res) => {
+
+    try {
+
+        const feedback = new Feedback(req.body);
+
+        const savedFeedback = await feedback.save();
+
+        res.json(savedFeedback);
+
+    } catch (error) {
+
+        res.status(500).json({ message: error.message });
+
+    }
+
+};
+
+
+// Get All Feedback
+exports.getFeedback = async (req, res) => {
+
+    try {
+
+        const feedback = await Feedback.find();
+
+        res.json(feedback);
+
+    } catch (error) {
+
+        res.status(500).json({ message: error.message });
+
+    }
+
+};
+
+
+// Delete Feedback
+exports.deleteFeedback = async (req, res) => {
+
+    try {
+
+        await Feedback.findByIdAndDelete(req.params.id);
+
+        res.json({ message: "Feedback Deleted" });
+
+    } catch (error) {
+
+        res.status(500).json({ message: error.message });
+
+    }
+
+};
