@@ -14,6 +14,7 @@ const NOTES = [
     time: "3–4 hrs",
     likes: 2341,
     downloads: 45210,
+    image: "../images/image1.jpg",
   },
   {
     id: 2,
@@ -25,6 +26,7 @@ const NOTES = [
     time: "5–6 hrs",
     likes: 4891,
     downloads: 78330,
+    image: "../images/image2.png",
   },
   {
     id: 3,
@@ -36,6 +38,7 @@ const NOTES = [
     time: "2–3 hrs",
     likes: 3102,
     downloads: 52810,
+    image: "../images/image3.png",
   },
   {
     id: 4,
@@ -47,6 +50,7 @@ const NOTES = [
     time: "6–8 hrs",
     likes: 5677,
     downloads: 91450,
+    image: "../images/image4.png",
   },
   {
     id: 5,
@@ -58,6 +62,7 @@ const NOTES = [
     time: "4–5 hrs",
     likes: 3856,
     downloads: 63720,
+    image: "../images/image5.png",
   },
   {
     id: 6,
@@ -69,6 +74,7 @@ const NOTES = [
     time: "3–4 hrs",
     likes: 6120,
     downloads: 103500,
+    image: "../images/image6.png",
   },
 ];
 
@@ -88,9 +94,16 @@ function NoteCard({ note }) {
   const lv = LEVEL_COLORS[note.level];
   return (
     <div className="note-card">
-      <div className="note-thumb">
+      {/* Thumbnail with real image + fade overlay */}
+      <div
+        className="note-thumb"
+        style={{ backgroundImage: `url("${note.image}")` }}
+      >
+        {/* dark gradient fade so subject text is readable */}
+        <div className="note-thumb-overlay" />
         <div className="note-thumb-subject">{note.subject}</div>
       </div>
+
       <div className="note-top">
         <span className="level-badge" style={{ background: lv.bg, color: lv.color }}>
           <span className="level-dot" style={{ background: lv.dot }} />
@@ -148,7 +161,6 @@ export default function Library() {
           background-position: center;
           z-index: 0;
         }
-        /* Light white fade overlay — image shows through clearly */
         .lib-hero-overlay {
           position: absolute; inset: 0;
           background: linear-gradient(
@@ -160,7 +172,7 @@ export default function Library() {
           z-index: 1;
         }
 
-        /* ── TABS — white/light style ── */
+        /* ── TABS ── */
         .lib-tabs {
           display: flex; justify-content: center;
           gap: 10px; flex-wrap: wrap;
@@ -302,30 +314,37 @@ export default function Library() {
           transform: translateY(-4px);
           box-shadow: 0 8px 28px rgba(21,101,192,0.15);
         }
+
+        /* ── CARD THUMBNAIL with image ── */
         .note-thumb {
-          width: 100%; height: 110px;
-          background: linear-gradient(135deg, #0d2257 0%, #1565C0 100%);
-          display: flex; align-items: center; justify-content: center;
+          width: 100%; height: 120px;
+          background-size: cover;
+          background-position: center;
+          background-color: #0d2257;
+          display: flex; align-items: flex-end;
           position: relative; overflow: hidden;
         }
-        .note-thumb::before {
-          content: '';
-          position: absolute; top: -30px; right: -30px;
-          width: 120px; height: 120px; border-radius: 50%;
-          background: rgba(255,255,255,0.06);
-        }
-        .note-thumb::after {
-          content: '';
-          position: absolute; bottom: -20px; left: -20px;
-          width: 90px; height: 90px; border-radius: 50%;
-          background: rgba(255,255,255,0.05);
+        /* gradient fade from transparent top → dark bottom for text readability */
+        .note-thumb-overlay {
+          position: absolute; inset: 0;
+          background: linear-gradient(
+            to bottom,
+            rgba(13,34,87,0.05) 0%,
+            rgba(13,34,87,0.25) 40%,
+            rgba(13,34,87,0.72) 100%
+          );
+          z-index: 1;
         }
         .note-thumb-subject {
-          font-size: 0.72rem; font-weight: 700;
-          color: rgba(255,255,255,0.75);
+          position: relative; z-index: 2;
+          width: 100%;
+          padding: 10px 12px;
+          font-size: 0.70rem; font-weight: 700;
+          color: #fff;
           text-transform: uppercase; letter-spacing: 1px;
-          position: relative; z-index: 1;
+          text-shadow: 0 1px 4px rgba(0,0,0,0.5);
         }
+
         .note-top {
           padding: 10px 14px 6px;
           display: flex; align-items: center; justify-content: space-between;
@@ -386,12 +405,11 @@ export default function Library() {
 
       <Navbar />
 
-      {/* HERO with background image */}
+      {/* HERO */}
       <section className="lib-hero">
         <div className="lib-hero-bg" />
         <div className="lib-hero-overlay" />
 
-        {/* Tabs */}
         <div className="lib-tabs">
           {TABS.map((tab, i) => (
             <button
@@ -404,7 +422,6 @@ export default function Library() {
           ))}
         </div>
 
-        {/* Bio card */}
         <div className="lib-hero-bio">
           <h2 className="lib-hero-bio-heading">Share your Knowledge</h2>
           <p className="lib-hero-bio-text">
@@ -412,7 +429,6 @@ export default function Library() {
           </p>
         </div>
 
-        {/* Search */}
         <div className="lib-search-wrap">
           <div className="lib-search">
             <Search size={17} style={{ marginRight: 10, color: "#888" }} />
@@ -421,7 +437,7 @@ export default function Library() {
         </div>
       </section>
 
-      {/* UPLOAD BUTTON — below hero, small, right-aligned */}
+      {/* UPLOAD BUTTON */}
       <div className="lib-upload-wrap">
         <button className="lib-upload-btn">
           <Upload size={15} />
