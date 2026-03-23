@@ -1,0 +1,23 @@
+const express    = require("express");
+const router     = express.Router();
+const upload     = require("../middleware/upload");
+const {
+  createMaterial,
+  getMaterials,
+  getMaterialById,
+  deleteMaterial,
+} = require("../controllers/MaterialController");
+
+// POST   /Materials        → upload PDF + create record
+router.post  ("/",    upload.single("file"), createMaterial);
+
+// GET    /Materials        → list all (supports ?module=&year=&search=&page=&limit=)
+router.get   ("/",                           getMaterials);
+
+// GET    /Materials/:id    → single material
+router.get   ("/:id",                        getMaterialById);
+
+// DELETE /Materials/:id    → delete material + file
+router.delete("/:id",                        deleteMaterial);
+
+module.exports = router;

@@ -12,11 +12,16 @@ app.use(express.urlencoded({ extended: true }));
 // Import Feedback Route
 const FeedbackRouter = require("./routes/FeedbackRoute");
 const QuizRouter = require("./routes/QuizRoute");
+const materialRouter =require("./routes/MaterialRoutes");
+
 
 
 // Use Route
 app.use("/Feedback", FeedbackRouter);
 app.use("/quiz", QuizRouter);
+app.use("/uploads", express.static("uploads"));
+app.use("/Materials", materialRouter);
+
 
 // Test Route
 app.get("/", (req, res) => {
