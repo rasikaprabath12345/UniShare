@@ -1,9 +1,15 @@
 import React from "react";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
-import { Search, BookOpen, Users, Brain, MessageSquare, CheckCircle2, Upload, Video, Zap, Globe, HeartHandshake } from "lucide-react";
+import {
+  Search, BookOpen, Users, Brain, MessageSquare,
+  CheckCircle2, Upload, Video, Zap, Globe, HeartHandshake
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 function Home() {
+  const navigate = useNavigate();
+
   return (
     <div>
       <style>{`
@@ -365,7 +371,7 @@ function Home() {
               <h3>Library</h3>
             </div>
             <p>Access study materials, notes & resources</p>
-            <button>View Now</button>
+            <button onClick={() => navigate("/library")}>View Now</button>
           </div>
           <div className="course-card">
             <div className="card-header">
@@ -373,15 +379,15 @@ function Home() {
               <h3>KUPPI</h3>
             </div>
             <p>Join peer learning sessions & discussions</p>
-            <button>View Now</button>
+            <button onClick={() => navigate("/kuppi")}>View Now</button>
           </div>
           <div className="course-card">
             <div className="card-header">
               <div className="card-icon"><Brain size={24} /></div>
-              <h3>Quizzes</h3>
+              <h3>Quiz</h3>
             </div>
             <p>Test your knowledge with interactive quizzes</p>
-            <button>View Now</button>
+            <button onClick={() => navigate("/quizzes")}>View Now</button>
           </div>
           <div className="course-card">
             <div className="card-header">
@@ -389,7 +395,7 @@ function Home() {
               <h3>Forum</h3>
             </div>
             <p>Ask questions & connect with learners</p>
-            <button>View Now</button>
+            <button onClick={() => navigate("/forum")}>View Now</button>
           </div>
         </div>
       </section>

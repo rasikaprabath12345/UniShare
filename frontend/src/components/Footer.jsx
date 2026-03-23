@@ -219,7 +219,7 @@ export default function Footer() {
             <ul>
               <li><a href="#">Homepage</a></li>
               <li><a href="#">Library</a></li>
-              <li><a href="#">Quizzes</a></li>
+              <li><a href="#">Quiz</a></li>
               <li><a href="#">KUPPI Sessions</a></li>
               <li><a href="#">Forum</a></li>
               <li><a href="#">Careers</a></li>

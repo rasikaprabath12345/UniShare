@@ -95,7 +95,7 @@ function Navbar() {
           <li>Home</li>
           <li>Library</li>
           <li>Kuppi</li>
-          <li>Quizzes</li>
+          <li>Quiz</li>
           <li>About</li>
           <li>Forum</li>
         </ul>
