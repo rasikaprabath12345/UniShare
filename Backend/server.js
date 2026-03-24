@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -9,56 +11,59 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Import Feedback Route
-const FeedbackRouter = require("./routes/FeedbackRoute");
-const QuizRouter = require("./routes/QuizRoute");
+// Import Routes
+const FeedbackRouter  = require("./routes/FeedbackRoute");
+const QuizRouter      = require("./routes/QuizRoute");
+const materialRouter  = require("./routes/MaterialRoutes");
 
-
-// Use Route
-app.use("/Feedback", FeedbackRouter);
-app.use("/quiz", QuizRouter);
+// Use Routes
+app.use("/Feedback",  FeedbackRouter);
+app.use("/quiz",      QuizRouter);
+app.use("/uploads",   express.static("uploads"));
+app.use("/Materials", materialRouter);
 
 // Test Route
 app.get("/", (req, res) => {
-    res.send("Backend Running...");
+  res.send("Backend Running...");
 });
 
-// MongoDB URI
-const MONGO_URI = "mongodb+srv://gnpkaveeshanirmal_db_user:usqho1JuzjvGGRaZ@cluster0.co1heb0.mongodb.net/?retryWrites=true&w=majority";
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `Route not found: ${req.method} ${req.originalUrl}`
+  });
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error("Server error:", err.message);
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || "Server error"
+  });
+});
 
 // MongoDB Connection
 const connectWithRetry = () => {
+  console.log("Attempting to connect to MongoDB...");
 
-    console.log("Attempting to connect to MongoDB...");
+  mongoose.connect(process.env.MONGO_URI, {
+    serverSelectionTimeoutMS: 8000,
+    family: 4,
+  })
+  .then(() => {
+    console.log("✅ Connected to MongoDB");
 
-    mongoose.connect(MONGO_URI, {
-        serverSelectionTimeoutMS: 8000,
-        family: 4
-    })
-
-    .then(() => {
-
-        console.log("✅ Connected to MongoDB");
-
-        const PORT = 8000;
-
-        app.listen(PORT, () => {
-            console.log(`🚀 Server running on port ${PORT}`);
-        });
-
-    })
-
-    .catch((err) => {
-
-        console.error("❌ MongoDB connection failed:", err.message);
-
-        console.log("Retrying in 5 seconds...");
-
-        setTimeout(connectWithRetry, 8000);
-
+    app.listen(process.env.PORT || 8000, () => {
+      console.log(`🚀 Server running on port ${process.env.PORT}`);
     });
-
+  })
+  .catch((err) => {
+    console.error("❌ MongoDB connection failed:", err.message);
+    console.log("Retrying in 8 seconds...");
+    setTimeout(connectWithRetry, 8000);
+  });
 };
 
-// Start connection
 connectWithRetry();
