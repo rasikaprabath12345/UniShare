@@ -1,0 +1,205 @@
+// models/User.js
+
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+
+/**
+ * ============================================
+ * UNISHARE - USER SCHEMA
+ * MongoDB User Model for SLIIT Students Only
+ * ============================================
+ */
+
+const userSchema = new mongoose.Schema(
+  {
+    // ─── PERSONAL INFORMATION ───────────────────────────────────────────────────
+
+    fullName: {
+      type: String,
+      required: [true, 'Full name is required'],
+      trim: true,
+      minlength: [3, 'Full name must be at least 3 characters'],
+      maxlength: [100, 'Full name cannot exceed 100 characters'],
+    },
+
+    email: {
+      type: String,
+      required: [true, 'Email address is required'],
+      unique: true,
+      lowercase: true,
+      trim: true,
+      validate: [
+        {
+          // Standard email format check
+          validator: function (value) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+          },
+          message: 'Please provide a valid email address',
+        },
+        {
+          // SLIIT domain restriction - ONLY @my.sliit.lk emails allowed
+          validator: function (value) {
+            return value.endsWith('@my.sliit.lk');
+          },
+          message: 'Registration is restricted to SLIIT students only. Email must end with @my.sliit.lk',
+        },
+      ],
+    },
+
+    // ─── SECURITY ────────────────────────────────────────────────────────────────
+
+    password: {
+      type: String,
+      required: [true, 'Password is required'],
+      minlength: [8, 'Password must be at least 8 characters'],
+      select: false, // Exclude password from query results by default (security best practice)
+    },
+
+    // ─── ACADEMIC INFORMATION ────────────────────────────────────────────────────
+
+    studentId: {
+      type: String,
+      required: [true, 'Student ID is required'],
+      unique: true,
+      trim: true,
+      uppercase: true,
+      match: [/^[A-Z0-9]+$/, 'Student ID must contain only letters and numbers'],
+    },
+
+    faculty: {
+      type: String,
+      required: [true, 'Faculty is required'],
+      enum: {
+        values: ['IT', 'Engineering', 'Business', 'Computing', 'Other'],
+        message: 'Faculty must be one of: IT, Engineering, Business, Computing, Other',
+      },
+    },
+
+    academicYear: {
+      type: String,
+      required: [true, 'Academic year is required'],
+      enum: {
+        values: ['Year 1', 'Year 2', 'Year 3', 'Year 4'],
+        message: 'Academic year must be one of: Year 1, Year 2, Year 3, Year 4',
+      },
+    },
+
+    semester: {
+      type: Number,
+      required: [true, 'Semester is required'],
+      enum: {
+        values: [1, 2],
+        message: 'Semester must be either 1 or 2',
+      },
+    },
+
+    // ─── ROLE & ACCESS CONTROL ───────────────────────────────────────────────────
+
+    role: {
+      type: String,
+      default: 'student',
+      enum: {
+        values: ['student', 'admin'],
+        message: 'Role must be either student or admin',
+      },
+    },
+
+    // ─── PROFILE ─────────────────────────────────────────────────────────────────
+
+    profilePicture: {
+      type: String,
+      default: null,
+      trim: true,
+      // Optional: validate URL format if a value is provided
+      validate: {
+        validator: function (value) {
+          if (!value) return true; // Allow null/empty
+          return /^(https?:\/\/).+/.test(value);
+        },
+        message: 'Profile picture must be a valid URL starting with http:// or https://',
+      },
+    },
+
+    // ─── STATUS ──────────────────────────────────────────────────────────────────
+
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+  },
+
+  // ─── SCHEMA OPTIONS ────────────────────────────────────────────────────────────
+  {
+    timestamps: true, // Automatically manages createdAt and updatedAt fields
+    versionKey: false, // Removes the __v field from documents
+  }
+);
+
+// ══════════════════════════════════════════════════════════════════════════════
+// INDEXES
+// Improves query performance for frequently searched fields
+// ══════════════════════════════════════════════════════════════════════════════
+
+userSchema.index({ email: 1 });
+userSchema.index({ studentId: 1 });
+userSchema.index({ faculty: 1, academicYear: 1 }); // Compound index for filtered listings
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PRE-SAVE MIDDLEWARE
+// Hash the password before saving to the database
+// Only re-hashes if the password field was modified (prevents double-hashing)
+// ══════════════════════════════════════════════════════════════════════════════
+
+userSchema.pre('save', async function (next) {
+  // Skip hashing if password hasn't been modified
+  if (!this.isModified('password')) return next();
+
+  try {
+    const saltRounds = 12; // Higher rounds = more secure, but slower
+    this.password = await bcrypt.hash(this.password, saltRounds);
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// INSTANCE METHOD: comparePassword
+// Used during login to verify the entered password against the stored hash
+// Usage: const isMatch = await user.comparePassword(enteredPassword)
+// ══════════════════════════════════════════════════════════════════════════════
+
+userSchema.methods.comparePassword = async function (candidatePassword) {
+  // 'this.password' requires the password field to be explicitly selected in the query
+  return await bcrypt.compare(candidatePassword, this.password);
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
+// INSTANCE METHOD: toSafeObject
+// Returns a sanitized user object safe for API responses (removes sensitive fields)
+// Usage: const safeUser = user.toSafeObject()
+// ══════════════════════════════════════════════════════════════════════════════
+
+userSchema.methods.toSafeObject = function () {
+  const userObj = this.toObject();
+  delete userObj.password;
+  return userObj;
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
+// STATIC METHOD: findByEmail
+// Convenience method to find a user by email (includes password for auth flows)
+// Usage: const user = await User.findByEmail('it21100000@my.sliit.lk')
+// ══════════════════════════════════════════════════════════════════════════════
+
+userSchema.statics.findByEmail = function (email) {
+  return this.findOne({ email: email.toLowerCase() }).select('+password');
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MODEL EXPORT
+// ══════════════════════════════════════════════════════════════════════════════
+
+const User = mongoose.model('User', userSchema);
+
+module.exports = User;
