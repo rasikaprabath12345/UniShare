@@ -22,6 +22,7 @@ function App() {
         <Route path="/upload" element={<UploadNotes />} />
       </Routes>
     </Router>
+    
   );
 }
 
