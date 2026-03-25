@@ -14,13 +14,13 @@ import Register  from "./pages/UserManagement/Register";
 import Login from './pages/UserManagement/Login';
 import ForgotPassword from "./pages/UserManagement/ForgotPassword"; 
 import UploadNotes from "./pages/Library/UploadPdf";
+import Feedback from "./pages/Feedback/Feedback";
 import Forum from "./pages/Forum/Forum"
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<ResourceDashboard />} />
         <Route path="/dashboard" element={<ResourceDashboard />} />
         <Route path="/home" element={<Home />} />
         <Route path="/quiz" element={<QuizPage />} />
@@ -33,6 +33,8 @@ function App() {
         <Route path="/Register" element={<Register />} />
         <Route path="/Login" element={<Login />} />
          <Route path="/ForgotPassword" element={<ForgotPassword />} />
+         <Route path="/Feedback" element={<Feedback/>} />
+
 
         <Route path="/forum" element={<Forum />} />
 

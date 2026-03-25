@@ -1,7 +1,19 @@
 import React from "react";
+import { Link, useLocation } from "react-router-dom";
 import { Bell, MessageCircle, User } from "lucide-react";
 
 function Navbar() {
+  const location = useLocation();
+
+  const navLinks = [
+    { label: "Home",    path: "/home" },
+    { label: "Library", path: "/library" },
+    { label: "Kuppi",   path: "/Kuppi" },
+    { label: "Quiz",    path: "/quiz" },
+    { label: "About",   path: "/about" },
+    { label: "Forum",   path: "/forum" },
+  ];
+
   return (
     <>
       <style>{`
@@ -23,16 +35,19 @@ function Navbar() {
           font-size: 1.5rem;
           font-weight: 800;
           letter-spacing: -0.5px;
+          text-decoration: none;
         }
 
         .navbar ul {
           display: flex;
           list-style: none;
           gap: 35px;
+          margin: 0;
+          padding: 0;
         }
 
-        .navbar li {
-          cursor: pointer;
+        .navbar ul li a {
+          text-decoration: none;
           font-size: 0.85rem;
           font-weight: 600;
           letter-spacing: 1px;
@@ -41,7 +56,8 @@ function Navbar() {
           transition: color 0.2s;
         }
 
-        .navbar li:hover {
+        .navbar ul li a:hover,
+        .navbar ul li a.active {
           color: #1565C0;
         }
 
@@ -90,23 +106,29 @@ function Navbar() {
       `}</style>
 
       <nav className="navbar">
-        <h2 className="logo">UniShare</h2>
+        <Link to="/home" className="logo">UniShare</Link>
+
         <ul>
-          <li>Home</li>
-          <li>Library</li>
-          <li>Kuppi</li>
-          <li>Quiz</li>
-          <li>About</li>
-          <li>Forum</li>
+          {navLinks.map(({ label, path }) => (
+            <li key={path}>
+              <Link
+                to={path}
+                className={location.pathname === path ? "active" : ""}
+              >
+                {label}
+              </Link>
+            </li>
+          ))}
         </ul>
+
         <div className="nav-icons">
-          <button className="nav-icon">
+          <button className="nav-icon" aria-label="Notifications">
             <Bell size={18} color="#1a1a1a" strokeWidth={2} />
           </button>
-          <button className="nav-icon">
+          <button className="nav-icon" aria-label="Messages">
             <MessageCircle size={18} color="#1a1a1a" strokeWidth={2} />
           </button>
-          <button className="nav-icon">
+          <button className="nav-icon" aria-label="Profile">
             <User size={18} color="#1a1a1a" strokeWidth={2} />
           </button>
           <button className="btn-logout">Log out</button>
