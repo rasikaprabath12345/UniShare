@@ -16,6 +16,7 @@ const FeedbackRouter  = require("./routes/FeedbackRoute");
 const QuizRouter      = require("./routes/QuizRoute");
 const MaterialRouter  = require("./routes/MaterialRoutes");
 const UserRouter = require('./routes/UserRoutes');
+const ForumRouter = require('./routes/ForumRoute');
 
 
 // Use Routes
@@ -24,6 +25,9 @@ app.use("/quiz",      QuizRouter);
 app.use("/uploads",   express.static("uploads"));
 app.use("/Materials", MaterialRouter);
 app.use("/User", UserRouter);
+app.use("/Forum", ForumRouter);
+
+
 
 // Test Route
 app.get("/", (req, res) => {
