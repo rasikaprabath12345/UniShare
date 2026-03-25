@@ -21,6 +21,7 @@ import Profile from "./pages/UserManagement/Profile";
 import UploadNotes from "./pages/Library/UploadPdf";
 import Feedback from "./pages/Feedback/Feedback";
 import Forum from "./pages/Forum/Forum"
+import About from "./pages/About/About";
 
 function App() {
   return (
@@ -43,7 +44,7 @@ function App() {
          <Route path="/EditProfile" element={<EditProfile />} />
   
          <Route path="/Feedback" element={<Feedback/>} />
-
+        <Route path="/About" element={<About/>} />
 
         <Route path="/forum" element={<Forum />} />
 
