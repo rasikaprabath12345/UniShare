@@ -27,7 +27,7 @@ function App() {
     <Router>
       <Routes>
         <Route path="/dashboard" element={<ResourceDashboard />} />
-        <Route path="/home" element={<Home />} />
+        <Route path="/" element={<Home />} />
         <Route path="/quiz" element={<QuizPage />} />
         <Route path="/Navbar" element={<Navbar />} />
         <Route path="/Footer" element={<Footer />} />

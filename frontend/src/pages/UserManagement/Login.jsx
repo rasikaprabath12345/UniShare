@@ -233,7 +233,7 @@ export default function Login() {
     setError('');
     setLoading(true);
     try {
-      const res = await axios.post('http://localhost:8000/api/users/login', {
+      const res = await axios.post('http://localhost:8000/User/login', {
         email:    formData.email.toLowerCase().trim(),
         password: formData.password,
       });
