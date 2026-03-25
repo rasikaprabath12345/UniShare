@@ -15,6 +15,7 @@ import Login from './pages/UserManagement/Login';
 import ForgotPassword from "./pages/UserManagement/ForgotPassword"; 
 import UploadNotes from "./pages/Library/UploadPdf";
 import Feedback from "./pages/Feedback/Feedback";
+import Forum from "./pages/Forum/Forum"
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
          <Route path="/Feedback" element={<Feedback/>} />
 
 
+        <Route path="/forum" element={<Forum />} />
 
         <Route path="/upload" element={<UploadNotes />} />
       </Routes>
