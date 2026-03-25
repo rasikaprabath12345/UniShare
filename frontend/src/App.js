@@ -21,13 +21,14 @@ import Profile from "./pages/UserManagement/Profile";
 import UploadNotes from "./pages/Library/UploadPdf";
 import Feedback from "./pages/Feedback/Feedback";
 import Forum from "./pages/Forum/Forum"
+import About from "./pages/About/About";
 
 function App() {
   return (
     <Router>
       <Routes>
         <Route path="/dashboard" element={<ResourceDashboard />} />
-        <Route path="/home" element={<Home />} />
+        <Route path="/" element={<Home />} />
         <Route path="/quiz" element={<QuizPage />} />
         <Route path="/Navbar" element={<Navbar />} />
         <Route path="/Footer" element={<Footer />} />
@@ -43,7 +44,7 @@ function App() {
          <Route path="/EditProfile" element={<EditProfile />} />
   
          <Route path="/Feedback" element={<Feedback/>} />
-
+        <Route path="/About" element={<About/>} />
 
         <Route path="/forum" element={<Forum />} />
 
