@@ -14,13 +14,20 @@ app.use(express.urlencoded({ extended: true }));
 // Import Routes
 const FeedbackRouter  = require("./routes/FeedbackRoute");
 const QuizRouter      = require("./routes/QuizRoute");
-const materialRouter  = require("./routes/MaterialRoutes");
+const MaterialRouter  = require("./routes/MaterialRoutes");
+const UserRouter = require('./routes/UserRoutes');
+const ForumRouter = require('./routes/ForumRoute');
+
 
 // Use Routes
 app.use("/Feedback",  FeedbackRouter);
 app.use("/quiz",      QuizRouter);
 app.use("/uploads",   express.static("uploads"));
-app.use("/Materials", materialRouter);
+app.use("/Materials", MaterialRouter);
+app.use("/User", UserRouter);
+app.use("/Forum", ForumRouter);
+
+
 
 // Test Route
 app.get("/", (req, res) => {
