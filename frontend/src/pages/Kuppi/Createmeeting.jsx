@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import {
@@ -17,7 +19,20 @@ const MODULES = [
 
 const SEMESTERS = [1, 2];
 
+const API_BASE = "http://localhost:8000/api/meetings";
+
+function getLoggedUser() {
+  try {
+    return JSON.parse(localStorage.getItem("user"));
+  } catch {
+    return null;
+  }
+}
+
 export default function CreateMeeting() {
+  const navigate = useNavigate();
+  const currentUser = getLoggedUser();
+
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -31,6 +46,7 @@ export default function CreateMeeting() {
 
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState({});
+  const [submitError, setSubmitError] = useState("");
 
   const handle = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -48,8 +64,9 @@ export default function CreateMeeting() {
     return e;
   };
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
+    setSubmitError("");
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
 
@@ -64,12 +81,17 @@ export default function CreateMeeting() {
       year:        Number(form.year),
       semester:    Number(form.semester),
       module:      form.module,
-      // ownerId will come from auth context / JWT on backend
+      ownerId:     currentUser?._id || currentUser?.id || null,
+      ownerName:   currentUser?.fullName || currentUser?.name || "Unknown Host",
     };
 
-    // POST /api/meetings  — body: payload
-    console.log("Meeting payload:", payload);
-    setSubmitted(true);
+    try {
+      await axios.post(API_BASE, payload);
+      setSubmitted(true);
+      setTimeout(() => navigate("/Kuppi"), 900);
+    } catch (error) {
+      setSubmitError(error.response?.data?.message || "Failed to create meeting.");
+    }
   };
 
   return (
@@ -339,6 +361,11 @@ export default function CreateMeeting() {
             {/* Form */}
             <form onSubmit={submit}>
               <div className="cm-form">
+                {submitError && (
+                  <p style={{ color: "#b71c1c", fontSize: "0.78rem", fontWeight: 600 }}>
+                    {submitError}
+                  </p>
+                )}
 
                 {/* Title */}
                 <div className="cm-field">

@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import {
@@ -8,101 +9,12 @@ import {
   Pencil, Trash2, X, Check
 } from "lucide-react";
 
-// ── Sample data ───────────────────────────────────────────────────────────────
-// isOwner: true  →  My Meetings tab එකේ Edit / Delete buttons show වෙනවා
-const MEETINGS = [
-  {
-    id: 1,
-    title: "Introduction to Computer Networks",
-    description: "We will cover OSI model, TCP/IP stack and basic network topologies with live Q&A session.",
-    meetingLink: "https://meet.google.com/abc-defg-hij",
-    ownerId: "Dr. Kamal Perera",
-    scheduledAt: "2025-07-15T10:00:00",
-    status: "scheduled",
-    year: 2025, semester: 1,
-    module: "IT1201 — Networking",
-    isOwner: false,
-  },
-  {
-    id: 2,
-    title: "Data Structures: Trees & Graphs",
-    description: "Deep dive into binary trees, AVL trees, graph traversal algorithms with coding examples.",
-    meetingLink: "https://zoom.us/j/123456789",
-    ownerId: "Dr. Nimal Silva",
-    scheduledAt: "2025-07-18T14:00:00",
-    status: "live",
-    year: 2025, semester: 1,
-    module: "IT2105 — Programming",
-    isOwner: false,
-  },
-  {
-    id: 3,
-    title: "SQL Advanced Queries & Optimization",
-    description: "Joins, subqueries, indexing strategies and query performance tuning explained with real examples.",
-    meetingLink: "https://meet.google.com/xyz-uvwx-yz",
-    ownerId: "Me",
-    scheduledAt: "2025-07-10T09:00:00",
-    status: "ended",
-    year: 2025, semester: 1,
-    module: "IT1102 — Database",
-    isOwner: true,
-  },
-  {
-    id: 4,
-    title: "Ethical Hacking & Penetration Testing",
-    description: "Hands-on session covering vulnerability scanning, exploitation basics and responsible disclosure.",
-    meetingLink: "https://zoom.us/j/987654321",
-    ownerId: "Me",
-    scheduledAt: "2025-07-20T16:00:00",
-    status: "scheduled",
-    year: 2025, semester: 2,
-    module: "IT3301 — Security",
-    isOwner: true,
-  },
-  {
-    id: 5,
-    title: "Agile & Scrum in Real Projects",
-    description: "Sprint planning, retrospectives, kanban boards — how real teams work in the industry.",
-    meetingLink: "https://meet.google.com/scrum-demo",
-    ownerId: "Dr. Chaminda Rathnayake",
-    scheduledAt: "2025-07-22T11:00:00",
-    status: "scheduled",
-    year: 2025, semester: 2,
-    module: "IT2203 — Software Eng.",
-    isOwner: false,
-  },
-  {
-    id: 6,
-    title: "JavaScript & DOM Manipulation",
-    description: "Event handling, async JS, fetch API and building interactive UI components from scratch.",
-    meetingLink: "https://zoom.us/j/555666777",
-    ownerId: "Ms. Thilini Jayawardena",
-    scheduledAt: "2025-07-12T13:00:00",
-    status: "ended",
-    year: 2025, semester: 1,
-    module: "IT1303 — Web Dev",
-    isOwner: false,
-  },
-];
+const API_BASE = "http://localhost:8000/api/meetings";
 
 const MODULES = [
   "IT1201 — Networking", "IT2105 — Programming", "IT1102 — Database",
   "IT3301 — Security", "IT2203 — Software Eng.", "IT1303 — Web Dev",
 ];
-
-const MEETING_REGISTRATIONS = {
-  1: [
-    { id: "r1", fullName: "Kasun Perera", email: "kasun@university.lk", description: "2nd year networking student" },
-    { id: "r2", fullName: "Nethmi Silva", email: "nethmi@university.lk", description: "Interested in OSI and TCP/IP" },
-  ],
-  3: [
-    { id: "r3", fullName: "Ravindu Fernando", email: "ravindu@university.lk", description: "Working on a DB project" },
-  ],
-  4: [
-    { id: "r4", fullName: "Dinara Jayasuriya", email: "dinara@university.lk", description: "Cybersecurity club member" },
-    { id: "r5", fullName: "Tharaka Wijesinghe", email: "tharaka@university.lk", description: "Learning penetration testing basics" },
-  ],
-};
 
 const STATUS_CONFIG = {
   scheduled: { bg: "#e8f0fe", color: "#1565C0", dot: "#378add", label: "Scheduled", icon: <CalendarClock size={11} /> },
@@ -124,6 +36,28 @@ function formatDate(iso) {
 function formatTime(iso) {
   const d = new Date(iso);
   return d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+}
+
+function getLoggedUser() {
+  try {
+    return JSON.parse(localStorage.getItem("user"));
+  } catch {
+    return null;
+  }
+}
+
+function mapMeeting(meeting, userId) {
+  const ownerRaw =
+    typeof meeting.ownerId === "object" && meeting.ownerId !== null
+      ? meeting.ownerId._id
+      : meeting.ownerId;
+
+  return {
+    ...meeting,
+    id: meeting._id || meeting.id,
+    ownerDisplay: meeting.ownerName || ownerRaw || "Unknown Host",
+    isOwner: userId ? String(ownerRaw) === String(userId) : false,
+  };
 }
 
 // ── Delete Modal ──────────────────────────────────────────────────────────────
@@ -232,15 +166,39 @@ function EditModal({ meeting, onSave, onCancel }) {
 }
 
 // ── Register Modal (unchanged) ────────────────────────────────────────────────
-function RegisterModal({ meeting, onClose }) {
-  const [form, setForm] = useState({ fullName: "", email: "", description: "" });
+function RegisterModal({ meeting, onClose, onRegistered }) {
+  const user = getLoggedUser();
+  const [form, setForm] = useState({
+    fullName: user?.fullName || user?.name || "",
+    email: user?.email || "",
+    description: "",
+  });
   const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [registeredMeetingLink, setRegisteredMeetingLink] = useState("");
   const handle = (e) => setForm({ ...form, [e.target.name]: e.target.value });
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
-    // POST /api/meeting-registrations
-    // body: { meetingId: meeting.id, fullName, email, description, userId }
-    setSubmitted(true);
+    setSubmitError("");
+
+    try {
+      const response = await axios.post(`${API_BASE}/register`, {
+        meetingId: meeting._id || meeting.id,
+        userId: user?._id || user?.id || null,
+        fullName: form.fullName,
+        email: form.email,
+        description: form.description,
+      });
+
+      const linkFromApi = response.data?.data?.meetingLink || meeting.meetingLink || "";
+      setRegisteredMeetingLink(linkFromApi);
+      if (onRegistered) {
+        onRegistered(meeting._id || meeting.id);
+      }
+      setSubmitted(true);
+    } catch (error) {
+      setSubmitError(error.response?.data?.message || "Failed to register for this meeting.");
+    }
   };
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -249,7 +207,21 @@ function RegisterModal({ meeting, onClose }) {
           <div className="modal-success">
             <div className="success-icon">✓</div>
             <h3>You're Registered!</h3>
-            <p>We'll send the meeting link to <strong>{form.email}</strong> when the session starts.</p>
+            <p>Your registration is confirmed for <strong>{meeting.title}</strong>.</p>
+            {registeredMeetingLink && (
+              <>
+                <p style={{ wordBreak: "break-all" }}>
+                  Meeting Link: <a href={registeredMeetingLink} target="_blank" rel="noreferrer">{registeredMeetingLink}</a>
+                </p>
+                <button
+                  className="btn-register"
+                  type="button"
+                  onClick={() => window.open(registeredMeetingLink, "_blank", "noopener,noreferrer")}
+                >
+                  Open Meeting Link
+                </button>
+              </>
+            )}
             <button className="btn-close-modal" onClick={onClose}>Done</button>
           </div>
         ) : (
@@ -263,10 +235,15 @@ function RegisterModal({ meeting, onClose }) {
               </div>
             </div>
             <form onSubmit={submit} className="modal-form">
+              {submitError && (
+                <p style={{ color: "#b71c1c", fontSize: "0.76rem", fontWeight: 600 }}>
+                  {submitError}
+                </p>
+              )}
               <label>Full Name <span>*</span></label>
-              <input name="fullName" value={form.fullName} onChange={handle} placeholder="e.g. Kasun Perera" required />
+              <input name="fullName" value={form.fullName} onChange={handle} placeholder="e.g. Perera U K P" required />
               <label>Email Address <span>*</span></label>
-              <input name="email" type="email" value={form.email} onChange={handle} placeholder="e.g. kasun@university.lk" required />
+              <input name="email" type="email" value={form.email} onChange={handle} placeholder="e.g. it23232323@my.sliit.lk" required />
               <label>About You <span style={{ color: "#aaa", fontWeight: 400 }}>(optional)</span></label>
               <textarea name="description" value={form.description} onChange={handle} placeholder="Briefly describe your background or what you hope to learn…" rows={3} />
               <div className="modal-actions">
@@ -317,7 +294,7 @@ function RegistrationsModal({ meeting, registrations, onClose }) {
 
 // ── Meeting Card ──────────────────────────────────────────────────────────────
 function MeetingCard({ meeting, onRegister, onEdit, onDelete, onViewRegistrations, isMyMeetings }) {
-  const st = STATUS_CONFIG[meeting.status];
+  const st = STATUS_CONFIG[meeting.status] || STATUS_CONFIG.scheduled;
   const isEnded = meeting.status === "ended";
 
   return (
@@ -340,7 +317,7 @@ function MeetingCard({ meeting, onRegister, onEdit, onDelete, onViewRegistration
         </div>
         <div className="meeting-info-row" style={{ marginTop: 6 }}>
           <span><BookOpen size={12} style={{ marginRight: 5 }} />Sem {meeting.semester} · {meeting.year}</span>
-          <span><Users size={12} style={{ marginRight: 5 }} />{meeting.ownerId}</span>
+          <span><Users size={12} style={{ marginRight: 5 }} />{meeting.ownerDisplay}</span>
         </div>
       </div>
 
@@ -360,12 +337,19 @@ function MeetingCard({ meeting, onRegister, onEdit, onDelete, onViewRegistration
           </>
         ) : (
           <>
-            {!isEnded && (
+            {meeting.isRegistered ? (
+              <button
+                className="btn-register-seat"
+                onClick={() => window.open(meeting.meetingLink, "_blank", "noopener,noreferrer")}
+              >
+                Open Meeting Link <ChevronRight size={13} />
+              </button>
+            ) : !isEnded && (
               <button className="btn-register-seat" onClick={() => onRegister(meeting)}>
                 Register <ChevronRight size={13} />
               </button>
             )}
-            {isEnded && (
+            {!meeting.isRegistered && isEnded && (
               <button className="btn-ended" disabled>Session Ended</button>
             )}
           </>
@@ -378,13 +362,56 @@ function MeetingCard({ meeting, onRegister, onEdit, onDelete, onViewRegistration
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function Meetings() {
   const navigate = useNavigate();
-  const [meetings, setMeetings]       = useState(MEETINGS);
+  const user = getLoggedUser();
+  const userId = user?._id || user?.id || null;
+
+  const [meetings, setMeetings]       = useState([]);
+  const [loading, setLoading]         = useState(true);
+  const [loadError, setLoadError]     = useState("");
   const [activeTab, setActiveTab]     = useState(0);
   const [search, setSearch]           = useState("");
   const [selected, setSelected]       = useState(null); // register modal
   const [editTarget, setEditTarget]   = useState(null); // edit modal
   const [deleteTarget, setDeleteTarget] = useState(null); // delete modal
   const [registrationsTarget, setRegistrationsTarget] = useState(null); // owner-only registrations modal
+  const [registrations, setRegistrations] = useState([]);
+
+  useEffect(() => {
+    const loadMeetings = async () => {
+      try {
+        setLoading(true);
+        setLoadError("");
+        const meetingsResponse = await axios.get(API_BASE);
+        const items = Array.isArray(meetingsResponse.data?.data) ? meetingsResponse.data.data : [];
+
+        let registeredMeetingIds = new Set();
+        if (userId || user?.email) {
+          const regsResponse = await axios.get(`${API_BASE}/registrations/user/${userId || "none"}`, {
+            params: { email: user?.email || "" },
+          });
+          const regs = Array.isArray(regsResponse.data?.data) ? regsResponse.data.data : [];
+          registeredMeetingIds = new Set(regs.map((r) => String(r.meetingId)));
+        }
+
+        setMeetings(
+          items.map((m) => {
+            const mm = mapMeeting(m, userId);
+            return {
+              ...mm,
+              isRegistered: registeredMeetingIds.has(String(mm._id || mm.id)),
+            };
+          })
+        );
+      } catch (error) {
+        setLoadError(error.response?.data?.message || "Failed to load meetings");
+        setMeetings([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadMeetings();
+  }, [userId]);
 
   const filtered = meetings.filter((m) => {
     const matchTab =
@@ -392,20 +419,64 @@ export default function Meetings() {
       activeTab === 1 ? m.status === "scheduled" || m.status === "live" :
       m.isOwner === true; // My Meetings
     const matchSearch =
-      m.title.toLowerCase().includes(search.toLowerCase()) ||
-      m.module.toLowerCase().includes(search.toLowerCase());
+      (m.title || "").toLowerCase().includes(search.toLowerCase()) ||
+      (m.module || "").toLowerCase().includes(search.toLowerCase());
     return matchTab && matchSearch;
   });
 
-  const handleSave = (updated) => {
-    setMeetings(meetings.map(m => m.id === updated.id ? updated : m));
-    setEditTarget(null);
+  const handleSave = async (updated) => {
+    try {
+      const meetingId = updated._id || updated.id;
+      const response = await axios.put(`${API_BASE}/${meetingId}`, {
+        title: updated.title,
+        description: updated.description,
+        meetingLink: updated.meetingLink,
+        scheduledAt: updated.scheduledAt,
+        year: updated.year,
+        semester: updated.semester,
+        module: updated.module,
+        status: updated.status,
+      });
+
+      const saved = mapMeeting(response.data?.data || updated, userId);
+      setMeetings(meetings.map((m) => ((m._id || m.id) === meetingId ? saved : m)));
+      setEditTarget(null);
+    } catch (error) {
+      console.error("Failed to update meeting:", error.message);
+    }
   };
 
-  const handleDelete = () => {
-    setMeetings(meetings.filter(m => m.id !== deleteTarget.id));
-    setDeleteTarget(null);
-    // DELETE /api/meetings/:id
+  const handleDelete = async () => {
+    try {
+      const meetingId = deleteTarget._id || deleteTarget.id;
+      await axios.delete(`${API_BASE}/${meetingId}`);
+      setMeetings(meetings.filter((m) => (m._id || m.id) !== meetingId));
+      setDeleteTarget(null);
+    } catch (error) {
+      console.error("Failed to delete meeting:", error.message);
+    }
+  };
+
+  const handleViewRegistrations = async (meeting) => {
+    setRegistrationsTarget(meeting);
+    try {
+      const meetingId = meeting._id || meeting.id;
+      const response = await axios.get(`${API_BASE}/${meetingId}/registrations`);
+      setRegistrations(Array.isArray(response.data?.data) ? response.data.data : []);
+    } catch (error) {
+      setRegistrations([]);
+      console.error("Failed to load registrations:", error.message);
+    }
+  };
+
+  const handleRegistered = (meetingId) => {
+    setMeetings((prev) =>
+      prev.map((m) =>
+        String(m._id || m.id) === String(meetingId)
+          ? { ...m, isRegistered: true }
+          : m
+      )
+    );
   };
 
   return (
@@ -680,21 +751,24 @@ export default function Meetings() {
 
       {/* GRID */}
       <div className="meetings-grid">
+        {loading && <p>Loading meetings...</p>}
+        {!loading && loadError && <p>{loadError}</p>}
+        {!loading && !loadError && filtered.length === 0 && <p>No meetings found.</p>}
         {filtered.map((m) => (
           <MeetingCard
-            key={m.id}
+            key={m._id || m.id}
             meeting={m}
             onRegister={setSelected}
             onEdit={setEditTarget}
             onDelete={setDeleteTarget}
-            onViewRegistrations={setRegistrationsTarget}
+            onViewRegistrations={handleViewRegistrations}
             isMyMeetings={activeTab === 2 && m.isOwner}
           />
         ))}
       </div>
 
       {/* REGISTER MODAL */}
-      {selected && <RegisterModal meeting={selected} onClose={() => setSelected(null)} />}
+      {selected && <RegisterModal meeting={selected} onClose={() => setSelected(null)} onRegistered={handleRegistered} />}
 
       {/* EDIT MODAL */}
       {editTarget && <EditModal meeting={editTarget} onSave={handleSave} onCancel={() => setEditTarget(null)} />}
@@ -706,7 +780,7 @@ export default function Meetings() {
       {registrationsTarget?.isOwner && (
         <RegistrationsModal
           meeting={registrationsTarget}
-          registrations={MEETING_REGISTRATIONS[registrationsTarget.id] || []}
+          registrations={registrations}
           onClose={() => setRegistrationsTarget(null)}
         />
       )}

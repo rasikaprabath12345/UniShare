@@ -1,5 +1,4 @@
-// meetingRegistration.model.js
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
 const { Schema } = mongoose;
 
@@ -32,4 +31,4 @@ meetingRegistrationSchema.index({ meetingId: 1, email: 1 }, { unique: true });
 
 const MeetingRegistration = mongoose.model("MeetingRegistration", meetingRegistrationSchema);
 
-export default MeetingRegistration;
+module.exports = MeetingRegistration;
