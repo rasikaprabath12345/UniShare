@@ -1,3 +1,4 @@
+const jwt = require('jsonwebtoken');
 const User = require('../models/Usermanagement'); // ✅ FIXED NAME
 
 // REGISTER
@@ -86,16 +87,24 @@ exports.loginUser = async (req, res) => {
     if (!safeUser.role) {
       safeUser.role = user.role || 'student';
     }
+
+    // Generate JWT Token
+    const token = jwt.sign(
+      { userId: user._id, email: user.email, role: user.role },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '24h' }
+    );
     
     // Debug logging
     console.log('✓ Login successful for:', safeUser.email);
     console.log('  Role:', safeUser.role);
     console.log('  Full Name:', safeUser.fullName);
-    console.log('  Safe User Object:', safeUser);
+    console.log('  Token generated:', token.substring(0, 20) + '...');
 
     res.status(200).json({
       message: 'Login successful',
-      user: safeUser
+      user: safeUser,
+      token: token
     });
 
   } catch (error) {
@@ -178,6 +187,44 @@ exports.deleteUser = async (req, res) => {
 
     res.status(200).json({
       message: 'User deleted successfully'
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      message: error.message
+    });
+  }
+};
+
+// UPDATE PROFILE (Authenticated - updates current user's profile)
+exports.updateProfile = async (req, res) => {
+  try {
+    const userId = req.userId; // From auth middleware
+    const { fullName, faculty, academicYear, semester } = req.body;
+
+    // Validate input
+    if (!userId) {
+      return res.status(401).json({
+        message: 'User not authenticated'
+      });
+    }
+
+    // Update user
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { fullName, faculty, academicYear, semester },
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    if (!user) {
+      return res.status(404).json({
+        message: 'User not found'
+      });
+    }
+
+    res.status(200).json({
+      message: 'Profile updated successfully',
+      user: user.toSafeObject()
     });
 
   } catch (error) {

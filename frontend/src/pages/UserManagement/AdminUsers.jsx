@@ -411,19 +411,19 @@ function DeleteModal({ target, onClose, onConfirm }) {
           <div style={{ width: 34, height: 34, borderRadius: 10, background: "#fce8ef", color: "#993556", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <Trash2 size={16} />
           </div>
-          <div className="modal-title">Delete User Account</div>
+          <div className="modal-title">Remove User Account</div>
           <button className="modal-close" onClick={onClose}><X size={15} /></button>
         </div>
         <div className="modal-body">
           <p style={{ fontSize: "0.82rem", color: "#444", lineHeight: 1.6 }}>
-            Are you sure you want to permanently delete <strong style={{ color: "#0d2257" }}>{target?.fullName}</strong>'s account?
+            Are you sure you want to permanently remove <strong style={{ color: "#0d2257" }}>{target?.fullName}</strong>'s account?
             This action <strong style={{ color: "#993556" }}>cannot be undone</strong> and will remove all their uploads and activity.
           </p>
         </div>
         <div className="modal-footer">
           <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
           <button className="btn btn-danger" onClick={() => onConfirm(target._id)}>
-            <Trash2 size={13} /> Delete Permanently
+            <Trash2 size={13} /> Remove Permanently
           </button>
         </div>
       </div>
@@ -432,7 +432,7 @@ function DeleteModal({ target, onClose, onConfirm }) {
 }
 
 /* ─────────────────────────── REVIEW MODAL ─────────────────────────── */
-function ReviewModal({ report, users, onClose, onApproveWarn, onApproveDelete, onReject }) {
+function ReviewModal({ report, users, adminId, onClose, onApproveWarn, onApproveDelete, onReject }) {
   const reportedUser = users.find(u => u._id === report.reportedUserId);
   const [warnMsg, setWarnMsg] = useState("");
   const [action, setAction] = useState(null); // null | 'approve' | 'reject'
@@ -514,8 +514,14 @@ function ReviewModal({ report, users, onClose, onApproveWarn, onApproveDelete, o
                 <button className="btn btn-warning" style={{ flex: 1 }} onClick={() => setAction("approve-warn")}>
                   <AlertTriangle size={13} /> Send Warning
                 </button>
-                <button className="btn btn-danger" style={{ flex: 1 }} onClick={() => onApproveDelete(report._id, reportedUser?._id)}>
-                  <Trash2 size={13} /> Delete User
+                <button 
+                  className="btn btn-danger" 
+                  style={{ flex: 1, opacity: adminId === reportedUser?._id ? 0.5 : 1, cursor: adminId === reportedUser?._id ? "not-allowed" : "pointer" }}
+                  disabled={adminId === reportedUser?._id}
+                  title={adminId === reportedUser?._id ? "Cannot delete your own account" : ""}
+                  onClick={() => onApproveDelete(report._id, reportedUser?._id)}
+                >
+                  <Trash2 size={13} /> Remove User
                 </button>
               </div>
               <button className="btn btn-ghost btn-sm" onClick={() => setAction(null)}>← Back</button>
@@ -583,6 +589,12 @@ export default function AdminPanel() {
 
   /* ── Handlers ── */
   const handleDelete = async (id) => {
+    const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+    if (currentUser._id === id) {
+      showToast("Cannot delete your own admin account.", "danger");
+      setDeleteTarget(null);
+      return;
+    }
     try {
       await axios.delete(`${API}/users/${id}`, { headers: authHeader() });
     } catch {}
@@ -625,6 +637,12 @@ export default function AdminPanel() {
   };
 
   const handleApproveDelete = async (reportId, userId) => {
+    const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+    if (currentUser._id === userId) {
+      showToast("Cannot delete your own admin account.", "danger");
+      setReviewTarget(null);
+      return;
+    }
     try {
       await axios.patch(`${API}/reports/${reportId}`, { status: "reviewed" }, { headers: authHeader() });
     } catch {}
@@ -665,6 +683,7 @@ export default function AdminPanel() {
   ];
 
   const adminName = (JSON.parse(localStorage.getItem("user") || "{}")).fullName || "Admin";
+  const adminId = (JSON.parse(localStorage.getItem("user") || "{}"))._id || null;
   const adminInitials = adminName.split(" ").map(n => n[0]).slice(0,2).join("");
 
   return (
@@ -798,7 +817,6 @@ export default function AdminPanel() {
                           <th>Year / Sem</th>
                           <th>Warnings</th>
                           <th>Status</th>
-                          <th>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -818,16 +836,6 @@ export default function AdminPanel() {
                               <span className={`badge ${u.isActive ? "badge-active" : "badge-inactive"}`}>
                                 {u.isActive ? "Active" : "Inactive"}
                               </span>
-                            </td>
-                            <td>
-                              <div className="actions-cell">
-                                <button className="btn btn-warning btn-sm" onClick={() => setWarnTarget(u)}>
-                                  <AlertTriangle size={11} /> Warn
-                                </button>
-                                <button className="btn btn-danger btn-sm" onClick={() => setDeleteTarget(u)}>
-                                  <Trash2 size={11} /> Delete
-                                </button>
-                              </div>
                             </td>
                           </tr>
                         ))}
@@ -980,7 +988,7 @@ export default function AdminPanel() {
       {deleteTarget && <DeleteModal target={deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDelete} />}
       {reviewTarget && (
         <ReviewModal
-          report={reviewTarget} users={users}
+          report={reviewTarget} users={users} adminId={adminId}
           onClose={() => setReviewTarget(null)}
           onApproveWarn={handleApproveWarn}
           onApproveDelete={handleApproveDelete}

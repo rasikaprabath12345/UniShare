@@ -2,9 +2,13 @@ const express = require('express');
 const router = express.Router();
 
 const userController = require('../controllers/UserController');
+const { verifyToken } = require('../middleware/auth');
 
 router.post('/register', userController.registerUser);
 router.post('/login', userController.loginUser);
+
+// Protected routes (require authentication)
+router.put('/profile', verifyToken, userController.updateProfile);
 
 router.get('/', userController.getUsers);
 router.get('/:id', userController.getUserById);

@@ -129,6 +129,35 @@ const styles = `
     box-shadow: 0 0 0 3px rgba(21,101,192,0.10);
   }
 
+  /* ── Input validation states ── */
+  .reg-input.valid {
+    border-color: #22c55e; background: rgba(34, 197, 94, 0.03);
+  }
+  .reg-input.invalid {
+    border-color: var(--rose); background: rgba(212, 83, 126, 0.03);
+  }
+  .reg-input.valid:focus {
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+  }
+  .reg-input.invalid:focus {
+    box-shadow: 0 0 0 3px rgba(212, 83, 126, 0.15);
+  }
+
+  /* ── Validation feedback ── */
+  .reg-feedback {
+    font-size: 0.75rem; margin-top: 4px; display: flex; align-items: center; gap: 4px;
+    line-height: 1.4; min-height: 18px;
+  }
+  .reg-feedback.success {
+    color: #22c55e; font-weight: 500;
+  }
+  .reg-feedback.error {
+    color: var(--rose); font-weight: 500;
+  }
+  .reg-feedback.info {
+    color: var(--blue); font-weight: 500;
+  }
+
   /* ── Error alert ── */
   .reg-alert {
     background: var(--rose-pale); border: 1px solid rgba(212,83,126,0.22);
@@ -178,35 +207,129 @@ export default function Register() {
     fullName: '', email: '', password: '', confirmPassword: '',
     studentId: '', faculty: 'IT', academicYear: 'Year 1', semester: '1',
   });
-  const [error,   setError]   = useState('');
+
+  // Track validation state for each field
+  const [validation, setValidation] = useState({
+    fullName: null,
+    studentId: null,
+    email: null,
+    password: null,
+    confirmPassword: null,
+  });
+
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  /* ── Validation functions ── */
+  const validateFullName = (name) => {
+    if (!name.trim()) return { valid: false, msg: 'Full name is required' };
+    if (name.trim().length < 3) return { valid: false, msg: 'Name must be at least 3 characters' };
+    if (!/^[a-zA-Z\s]+$/.test(name)) return { valid: false, msg: 'Name can only contain letters and spaces' };
+    return { valid: true, msg: '✓ Name looks good' };
+  };
+
+  const validateStudentId = (id) => {
+    if (!id.trim()) return { valid: false, msg: 'Student ID is required' };
+    const upperID = id.trim().toUpperCase();
+    if (!/^IT\d{8}$/.test(upperID)) 
+      return { valid: false, msg: 'Format must be IT + 8 digits (e.g. IT21000000)' };
+    return { valid: true, msg: '✓ Valid IT number' };
+  };
+
+  const validateEmail = (mail) => {
+    if (!mail.trim()) return { valid: false, msg: 'Email is required' };
+    if (!mail.toLowerCase().endsWith('@my.sliit.lk'))
+      return { valid: false, msg: 'Must use @my.sliit.lk email' };
+    if (!/^[a-zA-Z0-9._]+@my\.sliit\.lk$/.test(mail.toLowerCase()))
+      return { valid: false, msg: 'Invalid email format' };
+    return { valid: true, msg: '✓ Valid SLIIT email' };
+  };
+
+  const validatePassword = (pass) => {
+    if (!pass) return { valid: false, msg: 'Password is required' };
+    if (pass.length < 8) return { valid: false, msg: 'Min. 8 characters required' };
+    if (!/[A-Z]/.test(pass)) return { valid: false, msg: 'Add at least one uppercase letter' };
+    if (!/[0-9]/.test(pass)) return { valid: false, msg: 'Add at least one number' };
+    return { valid: true, msg: '✓ Strong password' };
+  };
+
+  const validateConfirmPassword = (confirm) => {
+    if (!confirm) return { valid: false, msg: 'Please confirm your password' };
+    if (confirm !== formData.password) return { valid: false, msg: 'Passwords do not match' };
+    return { valid: true, msg: '✓ Passwords match' };
+  };
+
+  /* ── Auto-generate email from Student ID ── */
+  const generateEmailFromStudentId = (studentId) => {
+    const upperID = studentId.trim().toUpperCase();
+    if (/^IT\d{8}$/.test(upperID)) {
+      // Format: IT21000000 → it21000000@my.sliit.lk
+      return upperID.toLowerCase() + '@my.sliit.lk';
+    }
+    return '';
+  };
+
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    let newFormData = { ...formData, [name]: value };
+
+    // Auto-generate email from student ID
+    if (name === 'studentId') {
+      const newEmail = generateEmailFromStudentId(value);
+      if (newEmail) {
+        newFormData.email = newEmail;
+      }
+    }
+
+    setFormData(newFormData);
     setError('');
+
+    // Real-time validation
+    let validationResult = null;
+    if (name === 'fullName') validationResult = validateFullName(value);
+    else if (name === 'studentId') validationResult = validateStudentId(value);
+    else if (name === 'email') validationResult = validateEmail(value);
+    else if (name === 'password') validationResult = validatePassword(value);
+    else if (name === 'confirmPassword') validationResult = validateConfirmPassword(value);
+
+    if (validationResult) {
+      setValidation({ ...validation, [name]: validationResult });
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    if (!formData.email.endsWith('@my.sliit.lk'))
-      return setError('Registration is restricted to SLIIT students only. Use your @my.sliit.lk email.');
-    if (formData.password.length < 8)
-      return setError('Password must be at least 8 characters long.');
-    if (formData.password !== formData.confirmPassword)
-      return setError('Passwords do not match. Please re-enter.');
+    // Validate all fields before submit
+    const fullNameVal = validateFullName(formData.fullName);
+    const studentIdVal = validateStudentId(formData.studentId);
+    const emailVal = validateEmail(formData.email);
+    const passwordVal = validatePassword(formData.password);
+    const confirmVal = validateConfirmPassword(formData.confirmPassword);
+
+    setValidation({
+      fullName: fullNameVal,
+      studentId: studentIdVal,
+      email: emailVal,
+      password: passwordVal,
+      confirmPassword: confirmVal,
+    });
+
+    if (!fullNameVal.valid || !studentIdVal.valid || !emailVal.valid || !passwordVal.valid || !confirmVal.valid) {
+      return setError('Please fix the errors above before registering.');
+    }
 
     setLoading(true);
     try {
       await axios.post('http://localhost:8000/User/register', {
-        fullName:     formData.fullName.trim(),
-        email:        formData.email.toLowerCase().trim(),
-        password:     formData.password,
-        studentId:    formData.studentId.trim().toUpperCase(),
-        faculty:      formData.faculty,
+        fullName: formData.fullName.trim(),
+        email: formData.email.toLowerCase().trim(),
+        password: formData.password,
+        studentId: formData.studentId.trim().toUpperCase(),
+        faculty: formData.faculty,
         academicYear: formData.academicYear,
-        semester:     Number(formData.semester),
+        semester: Number(formData.semester),
       });
       navigate('/login', { state: { registered: true } });
     } catch (err) {
@@ -273,20 +396,46 @@ export default function Register() {
 
               <div className="reg-group">
                 <label className="reg-label">Full Name <span className="req">*</span></label>
-                <input className="reg-input" type="text" name="fullName"
+                <input 
+                  className={`reg-input ${validation.fullName?.valid ? 'valid' : validation.fullName?.valid === false ? 'invalid' : ''}`}
+                  type="text" name="fullName" value={formData.fullName}
                   placeholder="e.g. Kavindu Perera" required onChange={handleChange} />
+                {validation.fullName && (
+                  <div className={`reg-feedback ${validation.fullName.valid ? 'success' : 'error'}`}>
+                    {validation.fullName.valid ? '✓' : '✕'} {validation.fullName.msg}
+                  </div>
+                )}
               </div>
 
               <div className="reg-row">
                 <div className="reg-group">
-                  <label className="reg-label">Student ID <span className="req">*</span></label>
-                  <input className="reg-input" type="text" name="studentId"
+                  <label className="reg-label">Student ID (IT Number) <span className="req">*</span></label>
+                  <input 
+                    className={`reg-input ${validation.studentId?.valid ? 'valid' : validation.studentId?.valid === false ? 'invalid' : ''}`}
+                    type="text" name="studentId" value={formData.studentId}
                     placeholder="IT21000000" required onChange={handleChange} />
+                  {validation.studentId && (
+                    <div className={`reg-feedback ${validation.studentId.valid ? 'success' : 'error'}`}>
+                      {validation.studentId.valid ? '✓' : '✕'} {validation.studentId.msg}
+                    </div>
+                  )}
                 </div>
                 <div className="reg-group">
                   <label className="reg-label">SLIIT Email <span className="req">*</span></label>
-                  <input className="reg-input" type="email" name="email"
+                  <input 
+                    className={`reg-input ${validation.email?.valid ? 'valid' : validation.email?.valid === false ? 'invalid' : ''}`}
+                    type="email" name="email" value={formData.email}
                     placeholder="it21xxxxxx@my.sliit.lk" required onChange={handleChange} />
+                  {formData.studentId && !formData.email.includes('@') && (
+                    <div className="reg-feedback info">
+                      💡 Auto-generated from your IT number
+                    </div>
+                  )}
+                  {validation.email && (
+                    <div className={`reg-feedback ${validation.email.valid ? 'success' : 'error'}`}>
+                      {validation.email.valid ? '✓' : '✕'} {validation.email.msg}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -329,13 +478,27 @@ export default function Register() {
               <div className="reg-row">
                 <div className="reg-group">
                   <label className="reg-label">Password <span className="req">*</span></label>
-                  <input className="reg-input" type="password" name="password"
+                  <input 
+                    className={`reg-input ${validation.password?.valid ? 'valid' : validation.password?.valid === false ? 'invalid' : ''}`}
+                    type="password" name="password" value={formData.password}
                     placeholder="Min. 8 characters" required onChange={handleChange} />
+                  {validation.password && (
+                    <div className={`reg-feedback ${validation.password.valid ? 'success' : 'error'}`}>
+                      {validation.password.valid ? '✓' : '✕'} {validation.password.msg}
+                    </div>
+                  )}
                 </div>
                 <div className="reg-group">
                   <label className="reg-label">Confirm Password <span className="req">*</span></label>
-                  <input className="reg-input" type="password" name="confirmPassword"
+                  <input 
+                    className={`reg-input ${validation.confirmPassword?.valid ? 'valid' : validation.confirmPassword?.valid === false ? 'invalid' : ''}`}
+                    type="password" name="confirmPassword" value={formData.confirmPassword}
                     placeholder="Re-enter password" required onChange={handleChange} />
+                  {validation.confirmPassword && (
+                    <div className={`reg-feedback ${validation.confirmPassword.valid ? 'success' : 'error'}`}>
+                      {validation.confirmPassword.valid ? '✓' : '✕'} {validation.confirmPassword.msg}
+                    </div>
+                  )}
                 </div>
               </div>
 

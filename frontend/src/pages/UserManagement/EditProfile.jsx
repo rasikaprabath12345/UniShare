@@ -37,6 +37,15 @@ export default function EditProfile() {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
+      
+      // If no token, prompt user to log in again
+      if (!token) {
+        setMessage({ text: 'Session expired. Please log in again.', type: 'error' });
+        setTimeout(() => navigate('/login'), 2000);
+        setLoading(false);
+        return;
+      }
+
       const res = await axios.put('http://localhost:8000/api/users/profile',
         {
           fullName: formData.fullName,
@@ -50,7 +59,15 @@ export default function EditProfile() {
       setMessage({ text: 'Profile updated successfully!', type: 'success' });
       setTimeout(() => navigate('/profile'), 2000);
     } catch (err) {
-      setMessage({ text: err.response?.data?.message || 'Update failed. Please try again.', type: 'error' });
+      // If authorization error, clear token and redirect to login
+      if (err.response?.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setMessage({ text: 'Session expired. Please log in again.', type: 'error' });
+        setTimeout(() => navigate('/login'), 2000);
+      } else {
+        setMessage({ text: err.response?.data?.message || 'Update failed. Please try again.', type: 'error' });
+      }
     } finally {
       setLoading(false);
     }

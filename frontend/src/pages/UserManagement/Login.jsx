@@ -182,6 +182,16 @@ export default function Login() {
     setError('');
   };
 
+  const handleEmailBlur = (e) => {
+    let email = e.target.value.trim();
+    
+    // If email exists but doesn't contain @, auto-append @my.sliit.lk
+    if (email && !email.includes('@')) {
+      email = email + '@my.sliit.lk';
+      setFormData({ ...formData, email });
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -203,7 +213,10 @@ export default function Login() {
       console.log('════════════════════════════════════');
 
       localStorage.setItem("user", JSON.stringify(res.data.user));
-      console.log('User saved to localStorage');
+      if (res.data.token) {
+        localStorage.setItem("token", res.data.token);
+      }
+      console.log('User and token saved to localStorage');
 
       const userRole = res.data.user.role;
       console.log('Checking role:', userRole);
@@ -296,8 +309,10 @@ export default function Login() {
                   type="email"
                   name="email"
                   placeholder="it21xxxxxx@my.sliit.lk"
+                  value={formData.email}
                   required
                   onChange={handleChange}
+                  onBlur={handleEmailBlur}
                 />
               </div>
 
