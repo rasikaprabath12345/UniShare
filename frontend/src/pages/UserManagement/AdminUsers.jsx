@@ -555,6 +555,98 @@ function ReviewModal({ report, users, adminId, onClose, onApproveWarn, onApprove
   );
 }
 
+/* ─────────────────────────── STUDENT REPORTS MODAL ─────────────────────────── */
+function StudentReportsModal({ student, reports, onClose }) {
+  const studentReports = reports.filter(r => r.reportedUserId === student._id);
+  const pendingCount = studentReports.filter(r => r.status === "pending").length;
+  const reviewedCount = studentReports.filter(r => r.status === "reviewed").length;
+  const rejectedCount = studentReports.filter(r => r.status === "rejected").length;
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" style={{ maxWidth: 700, maxHeight: "85vh", overflow: "hidden", display: "flex", flexDirection: "column" }} onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <div style={{ width: 34, height: 34, borderRadius: 10, background: "#e8f0fe", color: "#1565C0", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Flag size={16} />
+          </div>
+          <div>
+            <div className="modal-title">Report History</div>
+            <div style={{ fontSize: "0.68rem", color: "#aaa", marginTop: 2 }}>{student.fullName} ({student.studentId})</div>
+          </div>
+          <button className="modal-close" onClick={onClose}><X size={15} /></button>
+        </div>
+
+        {studentReports.length === 0 ? (
+          <div className="modal-body" style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+            <div className="empty-icon" style={{ width: 50, height: 50, marginBottom: 12 }}><Flag size={20} /></div>
+            <div className="empty-title" style={{ marginBottom: 4 }}>No Reports Found</div>
+            <div className="empty-sub">This student has not been reported.</div>
+          </div>
+        ) : (
+          <>
+            <div style={{ padding: "14px 28px", background: "#f8faff", borderBottom: "1px solid #e8f0fe", display: "flex", gap: 12 }}>
+              <div style={{ flex: 1, textAlign: "center" }}>
+                <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "#0d2257" }}>{studentReports.length}</div>
+                <div style={{ fontSize: "0.62rem", color: "#aaa" }}>Total</div>
+              </div>
+              <div style={{ flex: 1, textAlign: "center" }}>
+                <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "#b7830a" }}>{pendingCount}</div>
+                <div style={{ fontSize: "0.62rem", color: "#aaa" }}>Pending</div>
+              </div>
+              <div style={{ flex: 1, textAlign: "center" }}>
+                <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "#1565C0" }}>{reviewedCount}</div>
+                <div style={{ fontSize: "0.62rem", color: "#aaa" }}>Reviewed</div>
+              </div>
+              <div style={{ flex: 1, textAlign: "center" }}>
+                <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "#888" }}>{rejectedCount}</div>
+                <div style={{ fontSize: "0.62rem", color: "#aaa" }}>Rejected</div>
+              </div>
+            </div>
+            <div style={{ flex: 1, overflowY: "auto", padding: "14px 0" }}>
+              {studentReports.map((report, idx) => (
+                <div key={report._id} style={{ padding: "14px 28px", borderBottom: "1px solid #f0f4ff", display: "grid", gridTemplateColumns: "1fr auto", gap: 14, alignItems: "start" }}>
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                      <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#0d2257" }}>{report.contentTitle}</div>
+                      <span className={`report-badge-type ${report.contentType === "File" ? "type-file" : "type-comment"}`}>{report.contentType}</span>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 8 }}>
+                      <div>
+                        <div style={{ fontSize: "0.62rem", color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Reason</div>
+                        <div style={{ fontSize: "0.72rem", color: "#444", fontWeight: 600 }}>{report.reason}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: "0.62rem", color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Reported By</div>
+                        <div style={{ fontSize: "0.72rem", color: "#444", fontWeight: 600 }}>{report.reportedBy}</div>
+                      </div>
+                    </div>
+                    <div style={{ fontSize: "0.72rem", color: "#666", lineHeight: 1.5, background: "#f8faff", padding: "8px 10px", borderRadius: 6, marginBottom: 8 }}>
+                      {report.description}
+                    </div>
+                    <div style={{ fontSize: "0.68rem", color: "#aaa" }}>
+                      {new Date(report.date).toLocaleDateString()} at {new Date(report.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </div>
+                  </div>
+                  <span className={`badge ${
+                    report.status === "pending" ? "badge-pending" :
+                    report.status === "reviewed" ? "badge-reviewed" : "badge-rejected"
+                  }`} style={{ whiteSpace: "nowrap" }}>
+                    {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        <div className="modal-footer">
+          <button className="btn btn-ghost" onClick={onClose}>Close</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─────────────────────────── MAIN COMPONENT ─────────────────────────── */
 export default function AdminPanel() {
   const [tab, setTab] = useState("users");
@@ -567,6 +659,7 @@ export default function AdminPanel() {
   const [warnTarget, setWarnTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [reviewTarget, setReviewTarget] = useState(null);
+  const [studentReportsTarget, setStudentReportsTarget] = useState(null);
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -816,29 +909,46 @@ export default function AdminPanel() {
                           <th>Faculty</th>
                           <th>Year / Sem</th>
                           <th>Warnings</th>
+                          <th>Reports</th>
                           <th>Status</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredUsers.map(u => (
-                          <tr key={u._id}>
-                            <td className="td-id">{u.studentId}</td>
-                            <td className="td-name">{u.fullName}</td>
-                            <td className="td-email">{u.email}</td>
-                            <td style={{ fontSize: "0.73rem" }}>{u.faculty.replace("Faculty of ", "")}</td>
-                            <td style={{ fontSize: "0.73rem" }}>{u.academicYear} · {u.semester}</td>
-                            <td>
-                              <span className={`warn-count ${u.warningCount === 0 ? "warn-0" : u.warningCount === 1 ? "warn-1" : "warn-2plus"}`}>
-                                {u.warningCount}
-                              </span>
-                            </td>
-                            <td>
-                              <span className={`badge ${u.isActive ? "badge-active" : "badge-inactive"}`}>
-                                {u.isActive ? "Active" : "Inactive"}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
+                        {filteredUsers.map(u => {
+                          const userReportCount = reports.filter(r => r.reportedUserId === u._id).length;
+                          return (
+                            <tr key={u._id}>
+                              <td className="td-id">{u.studentId}</td>
+                              <td className="td-name">{u.fullName}</td>
+                              <td className="td-email">{u.email}</td>
+                              <td style={{ fontSize: "0.73rem" }}>{u.faculty.replace("Faculty of ", "")}</td>
+                              <td style={{ fontSize: "0.73rem" }}>{u.academicYear} · {u.semester}</td>
+                              <td>
+                                <span className={`warn-count ${u.warningCount === 0 ? "warn-0" : u.warningCount === 1 ? "warn-1" : "warn-2plus"}`}>
+                                  {u.warningCount}
+                                </span>
+                              </td>
+                              <td>
+                                {userReportCount > 0 ? (
+                                  <button 
+                                    className="btn btn-primary btn-sm" 
+                                    onClick={() => setStudentReportsTarget(u)}
+                                    title={`View ${userReportCount} report${userReportCount !== 1 ? 's' : ''}`}
+                                  >
+                                    <Flag size={11} /> {userReportCount}
+                                  </button>
+                                ) : (
+                                  <span style={{ fontSize: "0.7rem", color: "#aaa", fontWeight: 600 }}>—</span>
+                                )}
+                              </td>
+                              <td>
+                                <span className={`badge ${u.isActive ? "badge-active" : "badge-inactive"}`}>
+                                  {u.isActive ? "Active" : "Inactive"}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   )}
@@ -993,6 +1103,13 @@ export default function AdminPanel() {
           onApproveWarn={handleApproveWarn}
           onApproveDelete={handleApproveDelete}
           onReject={handleReject}
+        />
+      )}
+      {studentReportsTarget && (
+        <StudentReportsModal
+          student={studentReportsTarget}
+          reports={reports}
+          onClose={() => setStudentReportsTarget(null)}
         />
       )}
 

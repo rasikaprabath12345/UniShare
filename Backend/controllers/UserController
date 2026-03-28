@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
 const User = require('../models/Usermanagement'); // ✅ FIXED NAME
 
 // REGISTER
@@ -230,6 +231,108 @@ exports.updateProfile = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: error.message
+    });
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// CHANGE PASSWORD - DO NOT use req.params.id - uses req.body only
+// ═══════════════════════════════════════════════════════════════════════
+exports.changePassword = async (req, res) => {
+  try {
+    console.log('🔐 changePassword called');
+
+    // ✅ CRITICAL: Extract userId from REQUEST BODY ONLY (not from params)
+    const { userId, currentPassword, newPassword, confirmPassword } = req.body;
+
+    // Log what we received
+    console.log('Password change request:', {
+      userId: userId ? '✓ provided' : '✗ missing',
+      currentPassword: currentPassword ? '✓ provided' : '✗ missing',
+      newPassword: newPassword ? '✓ provided' : '✗ missing',
+      confirmPassword: confirmPassword ? '✓ provided' : '✗ missing',
+    });
+
+    // ─── VALIDATION: Check userId exists ────────────────────────────────
+    if (!userId) {
+      console.error('❌ No userId provided in request body');
+      return res.status(400).json({
+        message: 'User ID is required in request body'
+      });
+    }
+
+    // ─── VALIDATION: Validate ObjectId format BEFORE any DB query ────────
+    // This prevents the "Cast to ObjectId failed" error
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      console.error(`❌ Invalid ObjectId format: "${userId}"`);
+      return res.status(400).json({
+        message: `Invalid user ID format: "${userId}" is not a valid MongoDB ObjectId`
+      });
+    }
+
+    // ─── VALIDATION: Check all passwords provided ──────────────────────
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      console.error('❌ Missing password fields');
+      return res.status(400).json({
+        message: 'Current password, new password, and confirmation are all required'
+      });
+    }
+
+    // ─── VALIDATION: Passwords must match ──────────────────────────────
+    if (newPassword !== confirmPassword) {
+      console.error('❌ New passwords do not match');
+      return res.status(400).json({
+        message: 'New password and confirmation do not match'
+      });
+    }
+
+    // ─── VALIDATION: Password minimum length ──────────────────────────
+    if (newPassword.length < 8) {
+      console.error('❌ New password too short');
+      return res.status(400).json({
+        message: 'New password must be at least 8 characters long'
+      });
+    }
+
+    // ─── DATABASE QUERY: Find user by validated userId ────────────────
+    console.log(`🔍 Looking up user: ${userId}`);
+    const user = await User.findById(userId).select('+password');
+
+    if (!user) {
+      console.error(`❌ User not found: ${userId}`);
+      return res.status(404).json({
+        message: 'User not found'
+      });
+    }
+
+    // ─── SECURITY: Verify current password ─────────────────────────────
+    console.log('🔐 Verifying current password...');
+    const isPasswordMatch = await user.comparePassword(currentPassword);
+
+    if (!isPasswordMatch) {
+      console.error(`❌ Current password is incorrect for user: ${userId}`);
+      return res.status(401).json({
+        message: 'Current password is incorrect'
+      });
+    }
+
+    // ─── UPDATE: Set new password ──────────────────────────────────────
+    // The pre-save hook will automatically hash it
+    console.log('💾 Updating password...');
+    user.password = newPassword;
+    await user.save();
+
+    // ─── SUCCESS: Return response ──────────────────────────────────────
+    console.log(`✅ Password changed successfully for user: ${userId}`);
+    res.status(200).json({
+      message: 'Password changed successfully. You can now login with your new password.'
+    });
+
+  } catch (error) {
+    console.error('🔴 CRITICAL ERROR in changePassword:', error);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({
+      message: error.message || 'Failed to change password'
     });
   }
 };

@@ -47,10 +47,27 @@ export default function ChangePassword() {
     setLoading(true);
     setMessage({ text: "", type: "" });
     try {
+      // ✅ Extract userId from localStorage
+      const user = JSON.parse(localStorage.getItem("user"));
+      if (!user || !user._id) {
+        return setMessage({ text: "User not authenticated. Please login again.", type: "error" });
+      }
+
       const token = localStorage.getItem("token");
+      console.log('📤 Sending password change request:', {
+        userId: user._id,
+        endpoint: '/api/users/account/change-password'
+      });
+
+      // ✅ Send to NEW endpoint: /account/change-password
       await axios.put(
-        "http://localhost:8000/api/users/change-password",
-        formData,
+        "http://localhost:8000/api/users/account/change-password",
+        {
+          userId: user._id,
+          currentPassword: formData.currentPassword,
+          newPassword: formData.newPassword,
+          confirmPassword: formData.confirmPassword,
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setMessage({ text: "Password changed successfully! Redirecting…", type: "success" });
