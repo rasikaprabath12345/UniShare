@@ -18,12 +18,12 @@ const MOCK_USERS = [
 ];
 
 const MOCK_REPORTS = [
-  { _id: "r1", contentTitle: "Inappropriate Forum Post",  contentType: "Forum",    reason: "Offensive Language", description: "The user posted offensive content in the general forum that violates community guidelines.", reportedBy: "John Doe", reportedUserId: "u2", date: "2024-03-28", status: "pending" },
-  { _id: "r2", contentTitle: "Quiz Answer Leak",    contentType: "Quiz", reason: "Cheating",            description: "User shared quiz answers in the group chat, compromising test integrity.", reportedBy: "Admin", reportedUserId: "u3", date: "2024-03-25", status: "reviewed" },
-  { _id: "r3", contentTitle: "Spam Material Upload",            contentType: "File",    reason: "Spam Content",   description: "Multiple irrelevant files uploaded to the library without description.", reportedBy: "Sarah Wilson", reportedUserId: "u5", date: "2024-03-20", status: "rejected" },
-  { _id: "r4", contentTitle: "Harassment in Comments",    contentType: "Comment",    reason: "Harassment",    description: "User made derogatory comments targeting another student.", reportedBy: "Emma Davis", reportedUserId: "u1", date: "2024-03-26", status: "pending" },
-  { _id: "r5", contentTitle: "Plagiarized Report",            contentType: "File",    reason: "Plagiarism",   description: "Submitted report appears to be copied from online sources without proper citation.", reportedBy: "Professor Admin", reportedUserId: "u5", date: "2024-03-22", status: "reviewed" },
-  { _id: "r6", contentTitle: "Forum Advertisement",    contentType: "Forum",    reason: "Unauthorized Advertising",    description: "User posting commercial advertisements in educational forum.", reportedBy: "Moderator", reportedUserId: "u4", date: "2024-03-27", status: "pending" },
+  { _id: "r1", contentTitle: "Inappropriate Forum Post",  contentType: "Forum",    reason: "Offensive Language", description: "The user posted offensive content in the general forum that violates community guidelines.", reportedBy: "John Doe", reportedUserId: "u2", reportedUserName: "Dineth Silva", date: "2024-03-28", status: "pending" },
+  { _id: "r2", contentTitle: "Quiz Answer Leak",    contentType: "Quiz", reason: "Cheating",            description: "User shared quiz answers in the group chat, compromising test integrity.", reportedBy: "Admin", reportedUserId: "u3", reportedUserName: "Amaya Fernando", date: "2024-03-25", status: "reviewed" },
+  { _id: "r3", contentTitle: "Spam Material Upload",            contentType: "File",    reason: "Spam Content",   description: "Multiple irrelevant files uploaded to the library without description.", reportedBy: "Sarah Wilson", reportedUserId: "u5", reportedUserName: "Nimali Bandara", date: "2024-03-20", status: "rejected" },
+  { _id: "r4", contentTitle: "Harassment in Comments",    contentType: "Comment",    reason: "Harassment",    description: "User made derogatory comments targeting another student.", reportedBy: "Emma Davis", reportedUserId: "u1", reportedUserName: "Kavisha Perera", date: "2024-03-26", status: "pending" },
+  { _id: "r5", contentTitle: "Plagiarized Report",            contentType: "File",    reason: "Plagiarism",   description: "Submitted report appears to be copied from online sources without proper citation.", reportedBy: "Professor Admin", reportedUserId: "u5", reportedUserName: "Nimali Bandara", date: "2024-03-22", status: "reviewed" },
+  { _id: "r6", contentTitle: "Forum Advertisement",    contentType: "Forum",    reason: "Unauthorized Advertising",    description: "User posting commercial advertisements in educational forum.", reportedBy: "Moderator", reportedUserId: "u4", reportedUserName: "Rasith Jayaweera", date: "2024-03-27", status: "pending" },
 ];
 
 /* ─────────────────────────── HELPERS ─────────────────────────── */
@@ -614,7 +614,7 @@ function StudentReportsModal({ student, reports, onClose }) {
                       <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#0d2257" }}>{report.contentTitle}</div>
                       <span className={`report-badge-type ${report.contentType === "File" ? "type-file" : "type-comment"}`}>{report.contentType}</span>
                     </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 8 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10, marginBottom: 8 }}>
                       <div>
                         <div style={{ fontSize: "0.62rem", color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Reason</div>
                         <div style={{ fontSize: "0.72rem", color: "#444", fontWeight: 600 }}>{report.reason}</div>
@@ -622,6 +622,10 @@ function StudentReportsModal({ student, reports, onClose }) {
                       <div>
                         <div style={{ fontSize: "0.62rem", color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Reported By</div>
                         <div style={{ fontSize: "0.72rem", color: "#444", fontWeight: 600 }}>{report.reportedBy}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: "0.62rem", color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Reported User</div>
+                        <div style={{ fontSize: "0.72rem", color: "#0d2257", fontWeight: 600 }}>{report.reportedUserName}</div>
                       </div>
                     </div>
                     <div style={{ fontSize: "0.72rem", color: "#666", lineHeight: 1.5, background: "#f8faff", padding: "8px 10px", borderRadius: 6, marginBottom: 8 }}>
@@ -989,6 +993,7 @@ export default function AdminPanel() {
                           <th>Type</th>
                           <th>Reason</th>
                           <th>Reported By</th>
+                          <th>Reported User</th>
                           <th>Date</th>
                           <th>Status</th>
                           <th>Action</th>
@@ -1005,6 +1010,7 @@ export default function AdminPanel() {
                             </td>
                             <td style={{ fontSize: "0.73rem" }}>{r.reason}</td>
                             <td style={{ fontSize: "0.73rem" }}>{r.reportedBy}</td>
+                            <td style={{ fontSize: "0.73rem", color: "#0d2257" }}>{r.reportedUserName}</td>
                             <td style={{ fontSize: "0.7rem", color: "#aaa" }}>{r.date}</td>
                             <td>
                               <span className={`badge ${
