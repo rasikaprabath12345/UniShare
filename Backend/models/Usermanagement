@@ -98,6 +98,45 @@ const userSchema = new mongoose.Schema(
       },
     },
 
+    // ─── EMAIL VERIFICATION ────────────────────
+    emailVerificationToken: {
+      type: String,
+      default: null,
+    },
+
+    emailVerificationTokenExpiry: {
+      type: Date,
+      default: null,
+    },
+
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
+
+    // ─── PASSWORD RESET ────────────────────────
+    passwordResetToken: {
+      type: String,
+      default: null,
+    },
+
+    passwordResetExpiry: {
+      type: Date,
+      default: null,
+    },
+
+    // ─── OTP VERIFICATION ──────────────────────
+    otp: {
+      type: String,
+      default: null,
+      select: false,
+    },
+
+    otpExpiry: {
+      type: Date,
+      default: null,
+    },
+
     // ─── STATUS ───────────────────────────────
     isActive: {
       type: Boolean,
