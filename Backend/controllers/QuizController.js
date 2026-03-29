@@ -1,11 +1,11 @@
 const fs       = require("fs");
 const path     = require("path");
 const https    = require("https");
-const pdfParse = require("pdf-parse"); // ← top-level require, not inside function
+const pdfParse = require("pdf-parse");
 const Material = require("../models/Material");
 const Quiz     = require("../models/Quiz");
 
-// ── Grade helper ──────────────────────────────────────────────────────────────
+// ── Grade helper ─────────────────────────────────────────────
 const calcGrade = (pct) => {
   if (pct >= 90) return "A+";
   if (pct >= 80) return "A";
@@ -18,219 +18,271 @@ const calcGrade = (pct) => {
 const jsonError = (res, status, message) =>
   res.status(status).json({ success: false, message });
 
-// ── Call Groq using Node built-in https (no axios/fetch needed) ───────────────
+// ── Groq Call ────────────────────────────────────────────────
 function callGroq(apiKey, messages) {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify({
-      model:       "llama-3.3-70b-versatile",
+      model: "llama-3.3-70b-versatile",
       temperature: 0.3,
-      max_tokens:  4096,
+      max_tokens: 4096,
       messages,
     });
 
     const options = {
       hostname: "api.groq.com",
-      path:     "/openai/v1/chat/completions",
-      method:   "POST",
+      path: "/openai/v1/chat/completions",
+      method: "POST",
       headers: {
-        "Authorization":  `Bearer ${apiKey}`,
-        "Content-Type":   "application/json",
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
         "Content-Length": Buffer.byteLength(body),
       },
     };
 
     const req = https.request(options, (groqRes) => {
       let data = "";
-      groqRes.on("data", (chunk) => { data += chunk; });
+      groqRes.on("data", (chunk) => (data += chunk));
       groqRes.on("end", () => {
         try {
           const parsed = JSON.parse(data);
           if (groqRes.statusCode !== 200) {
-            reject(new Error(`Groq ${groqRes.statusCode}: ${parsed.error?.message || data.slice(0, 200)}`));
-          } else {
-            resolve(parsed);
-          }
-        } catch (e) {
-          reject(new Error(`Could not parse Groq response: ${data.slice(0, 100)}`));
+            reject(
+              new Error(parsed.error?.message || "Groq API error")
+            );
+          } else resolve(parsed);
+        } catch {
+          reject(new Error("Invalid Groq response"));
         }
       });
     });
 
-    req.on("error", (e) => reject(new Error(`Groq request error: ${e.message}`)));
+    req.on("error", (e) => reject(e));
     req.write(body);
     req.end();
   });
 }
 
-// ── POST /quiz/generate ───────────────────────────────────────────────────────
+// ── GENERATE QUIZ ─────────────────────────────────────────────
 const generateQuiz = async (req, res) => {
   try {
-    if (!process.env.GROQ_API_KEY) {
-      return jsonError(res, 500, "GROQ_API_KEY is not set in server.js");
-    }
+    const { materialId, userId } = req.body;
 
-    const { materialId } = req.body;
-    if (!materialId) return jsonError(res, 400, "materialId is required");
+    if (!materialId) return jsonError(res, 400, "materialId required");
+    if (!userId) return jsonError(res, 400, "userId required");
 
     const material = await Material.findById(materialId);
-    if (!material)  return jsonError(res, 404, "Material not found");
+    if (!material) return jsonError(res, 404, "Material not found");
 
-    // ── Read PDF file ─────────────────────────────────────────────────────────
     const filename = material.fileUrl.split("/uploads/")[1];
     const filePath = path.join("uploads", filename);
 
     if (!fs.existsSync(filePath)) {
-      return jsonError(res, 404, `PDF not found on server: ${filename}`);
+      return jsonError(res, 404, "PDF not found");
     }
 
-    let pdfText = "";
-    try {
-      const buffer = fs.readFileSync(filePath);
-      const data   = await pdfParse(buffer);
-      pdfText      = (data.text || "").slice(0, 6000).trim();
-    } catch (e) {
-      return jsonError(res, 500, `PDF read error: ${e.message}`);
+    const buffer = fs.readFileSync(filePath);
+    const data = await pdfParse(buffer);
+    const pdfText = (data.text || "").slice(0, 6000).trim();
+
+    if (pdfText.length < 50) {
+      return jsonError(res, 400, "Not enough content in PDF");
     }
 
-    if (pdfText.length < 80) {
-      return jsonError(res, 422,
-        "Not enough text extracted from PDF. Please upload a text-based PDF (not a scanned image)."
-      );
-    }
+const prompt = `
+You are an API that returns ONLY valid JSON.
 
-    // ── Call Groq ─────────────────────────────────────────────────────────────
-    const prompt = `You are a university exam question generator.
-Based ONLY on the study material below, generate exactly 20 multiple choice questions.
+Generate EXACTLY 20 multiple choice questions from the content below.
+
+Return ONLY a JSON array. No explanations outside JSON. No markdown.
+
+FORMAT STRICTLY:
+
+[
+  {
+    "question": "What is ...?",
+    "options": ["A", "B", "C", "D"],
+    "correct": 0,
+    "explanation": "Short explanation"
+  }
+]
 
 RULES:
-- Each question has exactly 4 options
-- "correct" is the 0-based index (0,1,2,3) of the correct answer
-- Add a short explanation per question
-- Mix: 7 easy, 8 medium, 5 hard
-- Return ONLY a JSON array. No markdown. No extra text.
+- MUST be valid JSON
+- options MUST be exactly 4
+- correct MUST be 0,1,2 or 3
+- DO NOT include text before or after JSON
+- DO NOT use markdown
 
-Format:
-[{"question":"...","options":["A","B","C","D"],"correct":0,"explanation":"..."}]
+CONTENT:
+${pdfText}
+`;
 
-Study Material:
-${pdfText}`;
+    const groqData = await callGroq(process.env.GROQ_API_KEY, [
+      { role: "system", content: "Return JSON only." },
+      { role: "user", content: prompt },
+    ]);
 
-    let groqData;
-    try {
-      groqData = await callGroq(process.env.GROQ_API_KEY, [
-        {
-          role:    "system",
-          content: "You are a JSON-only API. Output a valid JSON array only. No markdown, no extra text.",
-        },
-        { role: "user", content: prompt },
-      ]);
-    } catch (e) {
-      return jsonError(res, 502, `Groq API error: ${e.message}`);
-    }
+    const raw = groqData.choices?.[0]?.message?.content || "";
 
-    // ── Parse questions ───────────────────────────────────────────────────────
-    const rawText = groqData.choices?.[0]?.message?.content?.trim() || "";
-    const cleaned = rawText
-      .replace(/^```json\s*/i, "")
-      .replace(/^```\s*/i,     "")
-      .replace(/\s*```$/i,     "")
-      .trim();
+const cleaned = raw
+  .replace(/```json/gi, "")
+  .replace(/```/g, "")
+  .replace(/^[^[\]]*/, "") // remove text before [
+  .replace(/[^\]]*$/, "") // remove text after ]
+  .trim();
 
-    let questions = [];
+  console.log("RAW AI:\n", raw);
+console.log("CLEANED AI:\n", cleaned);
+
+    let questions;
     try {
       questions = JSON.parse(cleaned);
     } catch {
-      return jsonError(res, 500,
-        `AI returned invalid JSON. Preview: ${cleaned.slice(0, 150)}`
-      );
+      return jsonError(res, 500, "AI response parsing failed");
     }
 
-    if (!Array.isArray(questions) || questions.length === 0) {
-      return jsonError(res, 500, "AI returned empty question list. Try again.");
-    }
+const valid = questions
+  .map((q) => ({
+    question: q.question || "",
+    options: Array.isArray(q.options) ? q.options.slice(0, 4) : [],
+    correct: Number(q.correct),
+    explanation: q.explanation || ""
+  }))
+  .filter(q =>
+    q.question &&
+    q.options.length === 4 &&
+    !isNaN(q.correct) &&
+    q.correct >= 0 &&
+    q.correct < 4
+  );
 
-    const valid = questions.filter(
-      (q) =>
-        q.question &&
-        Array.isArray(q.options) &&
-        q.options.length === 4 &&
-        typeof q.correct === "number"
-    );
-
-    if (valid.length < 5) {
-      return jsonError(res, 500,
-        `Only ${valid.length} valid questions generated. Try again.`
-      );
+    if (valid.length === 0) {
+      return jsonError(res, 500, "No valid questions generated");
     }
 
     const quiz = await Quiz.create({
-      material:      material._id,
+      user: userId,
+      material: material._id,
       materialTitle: material.title,
-      questions:     valid.slice(0, 20),
-      total:         Math.min(valid.length, 20),
+      questions: valid.slice(0, 20),
+      total: Math.min(valid.length, 20), // ✅ FIXED
     });
 
     return res.status(201).json({ success: true, data: quiz });
 
   } catch (err) {
-    console.error("generateQuiz error:", err);
-    return jsonError(res, 500, err.message || "Unexpected server error");
+    return jsonError(res, 500, err.message);
   }
 };
 
-// ── POST /quiz/submit ─────────────────────────────────────────────────────────
+// ── SUBMIT QUIZ ─────────────────────────────────────────────
 const submitQuiz = async (req, res) => {
   try {
-    const { quizId, answers, timeTaken } = req.body;
-    if (!quizId || !Array.isArray(answers)) {
-      return jsonError(res, 400, "quizId and answers array are required");
-    }
+    const { quizId, answers, timeTaken, userId } = req.body;
+
+    if (!userId) return jsonError(res, 400, "userId required");
+    if (!quizId) return jsonError(res, 400, "quizId required");
+    if (!Array.isArray(answers)) return jsonError(res, 400, "answers must be array");
 
     const quiz = await Quiz.findById(quizId);
-    if (!quiz)          return jsonError(res, 404, "Quiz not found");
-    if (quiz.submitted) return jsonError(res, 400, "Quiz already submitted");
+    if (!quiz) return jsonError(res, 404, "Quiz not found");
+
+    if (quiz.user.toString() !== userId) {
+      return jsonError(res, 403, "Access denied");
+    }
+
+    if (quiz.submitted) {
+      return jsonError(res, 400, "Already submitted");
+    }
+
+    if (answers.length !== quiz.questions.length) {
+      return jsonError(res, 400, "Answers count mismatch");
+    }
 
     let score = 0;
+
     quiz.questions.forEach((q, i) => {
       if (answers[i] === q.correct) score++;
     });
 
-    const percentage    = Math.round((score / quiz.total) * 100);
-    quiz.answers        = answers;
-    quiz.score          = score;
-    quiz.percentage     = percentage;
-    quiz.grade          = calcGrade(percentage);
-    quiz.timeTaken      = timeTaken || null;
-    quiz.submitted      = true;
+    const percentage = Math.round((score / quiz.total) * 100);
+
+    quiz.answers = answers;
+    quiz.score = score;
+    quiz.percentage = percentage;
+    quiz.grade = calcGrade(percentage);
+    quiz.timeTaken = timeTaken || 0;
+    quiz.submitted = true;
+
     await quiz.save();
 
     return res.json({ success: true, data: quiz });
+
   } catch (err) {
     return jsonError(res, 500, err.message);
   }
 };
 
-// ── GET /quiz/my ──────────────────────────────────────────────────────────────
+// ── GET MY QUIZZES ───────────────────────────────────────────
 const getMyQuizzes = async (req, res) => {
   try {
-    const quizzes = await Quiz.find({ submitted: true })
+    const { userId } = req.query;
+
+    if (!userId) return jsonError(res, 400, "userId required");
+
+    const quizzes = await Quiz.find({
+      user: userId,
+      submitted: true,
+    })
       .sort({ createdAt: -1 })
       .select("materialTitle score total percentage grade timeTaken createdAt");
+
     return res.json({ success: true, data: quizzes });
+
   } catch (err) {
     return jsonError(res, 500, err.message);
   }
 };
 
-// ── GET /quiz/:id ─────────────────────────────────────────────────────────────
+// ── GET QUIZ BY ID ───────────────────────────────────────────
 const getQuizById = async (req, res) => {
   try {
+    const { userId } = req.query;
+
+    if (!userId) return jsonError(res, 400, "userId required");
+
     const quiz = await Quiz.findById(req.params.id);
     if (!quiz) return jsonError(res, 404, "Quiz not found");
+
+    if (quiz.user.toString() !== userId) {
+      return jsonError(res, 403, "Access denied");
+    }
+
     return res.json({ success: true, data: quiz });
+
   } catch (err) {
     return jsonError(res, 500, err.message);
   }
 };
 
-module.exports = { generateQuiz, submitQuiz, getMyQuizzes, getQuizById };
+// ── GET ALL QUIZZES ──────────────────────────────────────────
+const getAllQuizzes = async (req, res) => {
+  try {
+    const quizzes = await Quiz.find()
+      .populate("user", "name email")
+      .sort({ createdAt: -1 });
+
+    return res.json({ success: true, data: quizzes });
+
+  } catch (err) {
+    return jsonError(res, 500, err.message);
+  }
+};
+
+module.exports = {
+  generateQuiz,
+  submitQuiz,
+  getMyQuizzes,
+  getQuizById,
+  getAllQuizzes,
+};

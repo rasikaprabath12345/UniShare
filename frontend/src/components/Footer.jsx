@@ -1,8 +1,10 @@
 import React from "react";
-import { Twitter, Linkedin, Instagram, Facebook, ArrowUp, BookOpen } from "lucide-react";
+import { Twitter, Linkedin, Instagram, Facebook, ArrowUp } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function Footer() {
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
+  const navigate = useNavigate();
 
   return (
     <>
@@ -62,13 +64,17 @@ export default function Footer() {
         .us-brand-logo .logo-icon {
           width: 36px;
           height: 36px;
-          background: linear-gradient(135deg, #40E0D0, #00B4D8);
           border-radius: 9px;
+          overflow: hidden;
           display: flex;
           align-items: center;
           justify-content: center;
-          color: #001F3F;
           flex-shrink: 0;
+        }
+        .us-brand-logo .logo-icon img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
         }
         .us-brand-logo span {
           font-family: 'Playfair Display', serif;
@@ -133,6 +139,29 @@ export default function Footer() {
         }
         .us-col ul li a:hover {
           color: #00B4D8;
+        }
+
+        .us-feedback-btn {
+          display: inline-block;
+          margin-top: 8px;
+          padding: 9px 22px;
+          background: linear-gradient(135deg, #40E0D0, #00B4D8);
+          color: #001F3F;
+          border: none;
+          border-radius: 20px;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 0.82rem;
+          font-weight: 700;
+          letter-spacing: 0.04em;
+          cursor: pointer;
+          transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
+          box-shadow: 0 4px 14px rgba(64,224,208,0.25);
+          text-transform: uppercase;
+        }
+        .us-feedback-btn:hover {
+          opacity: 0.9;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(64,224,208,0.35);
         }
 
         .us-footer-divider {
@@ -200,8 +229,10 @@ export default function Footer() {
         <div className="us-footer-inner">
           <div>
             <div className="us-brand-logo">
-              <div className="logo-icon"><BookOpen size={18} /></div>
-              <span>UniShare.lk</span>
+              <div className="logo-icon">
+                <img src="./images/Logo.png" alt="UniShare Logo" />
+              </div>
+              <span>UniShare</span>
             </div>
             <p className="us-brand-desc">
               Empowering Sri Lankan university students with free study resources, peer learning sessions, and AI-powered quizzes.
@@ -246,13 +277,16 @@ export default function Footer() {
               <li><a href="#">Cookie Policy</a></li>
               <li><a href="#">Contact Us</a></li>
             </ul>
+            <button className="us-feedback-btn" onClick={() => navigate("/feedback")}>
+              Feedback
+            </button>
           </div>
         </div>
 
         <div className="us-footer-divider"><hr /></div>
 
         <div className="us-footer-bottom">
-          <p>© 2026 UniShare.lk · All Rights Reserved</p>
+          <p>©️ 2026 UniShare · All Rights Reserved</p>
           <button className="us-back-top" onClick={scrollToTop}>
             <ArrowUp size={13} /> Back to Top
           </button>
