@@ -2,61 +2,399 @@ const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const User = require('../models/Usermanagement'); // ✅ FIXED NAME
 
-// REGISTER
+// ═══════════════════════════════════════════════════════════════════════
+// REGISTER USER WITH EMAIL VERIFICATION (OTP)
+// ═══════════════════════════════════════════════════════════════════════
 exports.registerUser = async (req, res) => {
+  let user = null;
   try {
+    console.log('\n' + '═'.repeat(70));
+    console.log('📝 NEW USER REGISTRATION REQUEST');
+    console.log('═'.repeat(70));
+
     const {
       fullName,
       email,
       password,
+      confirmPassword,
       studentId,
       faculty,
       academicYear,
       semester
     } = req.body;
 
+    // ─── VALIDATION: Check all fields provided ────────────────────────────
     if (
       !fullName ||
       !email ||
       !password ||
+      !confirmPassword ||
       !studentId ||
       !faculty ||
       !academicYear ||
       !semester
     ) {
+      console.error('❌ Missing required fields');
       return res.status(400).json({
         message: 'All fields are required'
       });
     }
 
+    // ─── VALIDATION: Passwords match ──────────────────────────────────────
+    if (password !== confirmPassword) {
+      console.error('❌ Passwords do not match');
+      return res.status(400).json({
+        message: 'Passwords do not match'
+      });
+    }
+
+    // ─── VALIDATION: Password minimum length ──────────────────────────────
+    if (password.length < 8) {
+      console.error('❌ Password too short');
+      return res.status(400).json({
+        message: 'Password must be at least 8 characters long'
+      });
+    }
+
+    // ─── VALIDATION: Email format and SLIIT check ──────────────────────────
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      console.error('❌ Invalid email format:', email);
+      return res.status(400).json({
+        message: 'Please provide a valid email address'
+      });
+    }
+
+    if (!email.endsWith('@my.sliit.lk')) {
+      console.error('❌ Non-SLIIT email attempted:', email);
+      return res.status(400).json({
+        message: 'Only SLIIT student emails (@my.sliit.lk) are allowed'
+      });
+    }
+
+    console.log(`✓ Email format validated (SLIIT format)`);
+
+    // ─── DATABASE CHECK: User already exists ───────────────────────────────
+    console.log(`🔍 Checking if user already exists...`);
     const existingUser = await User.findOne({
       $or: [{ email }, { studentId }]
     });
 
     if (existingUser) {
-      return res.status(400).json({
-        message: 'User already exists'
-      });
+      if (existingUser.email === email) {
+        console.error('❌ Email already registered:', email);
+        return res.status(400).json({
+          message: 'This email is already registered. Please try logging in or use another email.'
+        });
+      }
+      if (existingUser.studentId === studentId) {
+        console.error('❌ Student ID already registered:', studentId);
+        return res.status(400).json({
+          message: 'This student ID is already registered. Please contact support if this is not you.'
+        });
+      }
     }
 
-    const user = await User.create({
+    // ─── CREATE USER: Set isEmailVerified to false ─────────────────────────
+    console.log(`\n💾 Creating new user account...`);
+    user = await User.create({
       fullName,
       email,
       password,
       studentId,
       faculty,
       academicYear,
-      semester
+      semester,
+      isEmailVerified: false  // ⭐ Not verified until OTP is confirmed
     });
 
+    console.log(`✓ User created: ${user._id}`);
+    console.log(`✓ Full Name: ${user.fullName}`);
+    console.log(`✓ Email: ${user.email}`);
+
+    // ─── GENERATE: 6-digit OTP ────────────────────────────────────────────
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes from now
+
+    console.log(`\n📝 Generating OTP...`);
+    console.log(`   OTP: ${otp}`);
+    console.log(`   Expires at: ${otpExpiry.toISOString()}`);
+
+    // ─── UPDATE: Save OTP to database ──────────────────────────────────────
+    user.otpCode = otp;
+    user.otpExpires = otpExpiry;
+    await user.save();
+
+    console.log(`✓ OTP saved to database`);
+
+    // ─── EMAIL: Send verification email ────────────────────────────────────
+    console.log(`\n📧 Sending verification email...`);
+    const { sendVerificationEmail } = require('../services/mailService');
+    
+    let emailSent = false;
+    try {
+      await sendVerificationEmail(email, otp, fullName);
+      console.log(`✅ Verification email sent successfully!`);
+      console.log(`   To: ${email}`);
+      emailSent = true;
+    } catch (emailError) {
+      console.error(`⚠️  Email sending failed (non-critical):`);
+      console.error(`   Error: ${emailError.message}`);
+      console.log(`   ℹ️  Account still created. User can proceed with OTP: ${otp}`);
+      console.log(`   ℹ️  Check SENDER_EMAIL and SENDER_PASSWORD in .env file`);
+      
+      // Don't delete user - they can still use test OTP if email is misconfigured
+      emailSent = false;
+    }
+
+    // ─── SUCCESS: Return response ──────────────────────────────────────────
+    console.log(`\n✅ REGISTRATION: SUCCESS`);
+    console.log('═'.repeat(70) + '\n');
+
     res.status(201).json({
-      message: 'User registered successfully',
-      user: user.toSafeObject()
+      success: true,
+      message: emailSent 
+        ? 'Registration successful! We have sent an OTP to your email. Please verify your email to complete registration.'
+        : `⚠️  Account created but email not sent. For testing, use OTP: ${otp}. Check email configuration.`,
+      nextStep: 'verify-email',
+      email: email,
+      requiresOTP: true,
+      emailSent: emailSent,
+      testOTP: emailSent ? undefined : otp  // Include test OTP if email failed
     });
 
   } catch (error) {
+    console.error('\n❌ REGISTRATION: UNEXPECTED ERROR');
+    console.error(`   Error: ${error.message}`);
+    console.error(`   Stack: ${error.stack}`);
+    console.error('═'.repeat(70) + '\n');
+
+    // Clean up user if something went wrong
+    if (user) {
+      try {
+        await User.findByIdAndDelete(user._id);
+        console.log('✓ Rolled back user creation');
+      } catch (e) {
+        console.error('Failed to rollback user creation:', e.message);
+      }
+    }
+
     res.status(500).json({
-      message: error.message
+      success: false,
+      message: error.message || 'Failed to register user. Please try again.'
+    });
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// VERIFY EMAIL OTP - Mark email as verified after OTP confirmation
+// ═══════════════════════════════════════════════════════════════════════
+exports.verifyEmailOTP = async (req, res) => {
+  try {
+    console.log('\n' + '═'.repeat(70));
+    console.log('✉️  EMAIL VERIFICATION REQUEST');
+    console.log('═'.repeat(70));
+
+    const { email, otp } = req.body;
+
+    // ─── VALIDATION: Check email and OTP provided ─────────────────────────
+    if (!email || !otp) {
+      console.error('❌ Missing email or OTP');
+      return res.status(400).json({
+        success: false,
+        message: 'Email and OTP are required'
+      });
+    }
+
+    console.log(`📧 Email received: ${email}`);
+    console.log(`🔐 OTP received: ${otp.substring(0, 2)}****`);
+
+    // ─── DATABASE: Find user by email ──────────────────────────────────────
+    console.log(`🔍 Looking up user...`);
+    const user = await User.findOne({ email: email.toLowerCase() }).select('+otpCode');
+
+    if (!user) {
+      console.error(`❌ User not found: ${email}`);
+      return res.status(404).json({
+        success: false,
+        message: 'User not found. Please check your email or register again.'
+      });
+    }
+
+    // ─── VALIDATION: Check if already verified ────────────────────────────
+    if (user.isEmailVerified) {
+      console.warn(`⚠️  Email already verified for: ${email}`);
+      return res.status(400).json({
+        success: false,
+        message: 'This email is already verified. Please try logging in.'
+      });
+    }
+
+    // ─── VALIDATION: Check if OTP was generated ───────────────────────────
+    if (!user.otpCode || !user.otpExpires) {
+      console.error(`❌ No OTP found for user: ${email}`);
+      return res.status(400).json({
+        success: false,
+        message: 'No OTP has been generated. Please request a new registration link.'
+      });
+    }
+
+    // ─── VALIDATION: Check if OTP is expired ──────────────────────────────
+    const now = new Date();
+    if (now > user.otpExpires) {
+      console.error(`❌ OTP expired for user: ${email}`);
+      // Clear expired OTP
+      user.otpCode = null;
+      user.otpExpires = null;
+      await user.save();
+      return res.status(400).json({
+        success: false,
+        message: 'OTP has expired. Please start registration again to receive a new OTP.'
+      });
+    }
+
+    // ─── VALIDATION: Check if OTP matches ─────────────────────────────────
+    if (user.otpCode !== otp) {
+      console.error(`❌ Incorrect OTP for user: ${email}`);
+      return res.status(400).json({
+        success: false,
+        message: 'Incorrect OTP. Please check and try again.'
+      });
+    }
+
+    // ─── UPDATE: Mark email as verified and clear OTP ────────────────────
+    console.log(`\n💾 Marking email as verified...`);
+    user.isEmailVerified = true;
+    user.otpCode = null;
+    user.otpExpires = null;
+    await user.save();
+
+    console.log(`✓ Email verified for user: ${email}`);
+
+    // ─── SUCCESS: Return response ──────────────────────────────────────────
+    console.log(`\n✅ EMAIL VERIFICATION: SUCCESS`);
+    console.log('═'.repeat(70) + '\n');
+
+    res.status(200).json({
+      success: true,
+      message: 'Email verified successfully! You can now log in with your credentials.',
+      isEmailVerified: true,
+      email: email
+    });
+
+  } catch (error) {
+    console.error('\n❌ EMAIL VERIFICATION: UNEXPECTED ERROR');
+    console.error(`   Error: ${error.message}`);
+    console.error('═'.repeat(70) + '\n');
+
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to verify email. Please try again.'
+    });
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// RESEND VERIFICATION EMAIL - Send OTP again if user didn't receive it
+// ═══════════════════════════════════════════════════════════════════════
+exports.resendVerificationEmail = async (req, res) => {
+  let user = null;
+  try {
+    console.log('\n' + '═'.repeat(70));
+    console.log('📧 RESEND VERIFICATION EMAIL REQUEST');
+    console.log('═'.repeat(70));
+
+    const { email } = req.body;
+
+    // ─── VALIDATION: Check email provided ──────────────────────────────────
+    if (!email) {
+      console.error('❌ No email provided');
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required'
+      });
+    }
+
+    console.log(`📧 Email received: ${email}`);
+
+    // ─── DATABASE: Find user by email ──────────────────────────────────────
+    console.log(`🔍 Looking up user...`);
+    user = await User.findOne({ email: email.toLowerCase() });
+
+    if (!user) {
+      console.error(`❌ User not found: ${email}`);
+      return res.status(404).json({
+        success: false,
+        message: 'Email not found. Please check and try again.'
+      });
+    }
+
+    // ─── VALIDATION: Check if already verified ────────────────────────────
+    if (user.isEmailVerified) {
+      console.warn(`⚠️  Email already verified for: ${email}`);
+      return res.status(400).json({
+        success: false,
+        message: 'This email is already verified. Please try logging in.'
+      });
+    }
+
+    // ─── GENERATE: New 6-digit OTP ────────────────────────────────────────
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes from now
+
+    console.log(`\n📝 Generating new OTP...`);
+    console.log(`   OTP: ${otp}`);
+    console.log(`   Expires at: ${otpExpiry.toISOString()}`);
+
+    // ─── UPDATE: Save new OTP to database ──────────────────────────────────
+    user.otpCode = otp;
+    user.otpExpires = otpExpiry;
+    await user.save();
+
+    console.log(`✓ OTP saved to database`);
+
+    // ─── EMAIL: Send verification email again ─────────────────────────────
+    console.log(`\n📧 Sending verification email...`);
+    const { sendVerificationEmail } = require('../services/mailService');
+    
+    try {
+      await sendVerificationEmail(email, otp, user.fullName);
+      console.log(`✅ Verification email sent successfully!`);
+      console.log(`   To: ${email}`);
+    } catch (emailError) {
+      console.error(`❌ CRITICAL: Email sending failed!`);
+      console.error(`   Error: ${emailError.message}`);
+      
+      // Don't delete user, just clear OTP
+      user.otpCode = null;
+      user.otpExpires = null;
+      await user.save();
+      
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to send verification email. Please try again later.',
+        error: emailError.message
+      });
+    }
+
+    // ─── SUCCESS: Return response ──────────────────────────────────────────
+    console.log(`\n✅ RESEND VERIFICATION EMAIL: SUCCESS`);
+    console.log('═'.repeat(70) + '\n');
+
+    res.status(200).json({
+      success: true,
+      message: 'Verification email sent again! Check your email for the OTP code.',
+      email: email
+    });
+
+  } catch (error) {
+    console.error('\n❌ RESEND VERIFICATION EMAIL: UNEXPECTED ERROR');
+    console.error(`   Error: ${error.message}`);
+    console.error('═'.repeat(70) + '\n');
+
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to resend verification email. Please try again.'
     });
   }
 };
@@ -79,6 +417,17 @@ exports.loginUser = async (req, res) => {
     if (!isMatch) {
       return res.status(400).json({
         message: 'Invalid email or password'
+      });
+    }
+
+    // ─── VALIDATION: Check if email is verified ───────────────────────────
+    if (!user.isEmailVerified) {
+      console.warn(`⚠️  Login attempt with unverified email: ${email}`);
+      return res.status(403).json({
+        success: false,
+        message: 'Please verify your email before logging in. Check your email for the verification OTP.',
+        requiresEmailVerification: true,
+        email: email
       });
     }
 

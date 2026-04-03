@@ -12,6 +12,8 @@ const { verifyToken } = require('../middleware/auth');
 // POST ROUTES
 // ──────────────────────────────────────────────────────────────────────
 router.post('/register', userController.registerUser);
+router.post('/verify-email-otp', userController.verifyEmailOTP);
+router.post('/resend-verification-email', userController.resendVerificationEmail);
 router.post('/login', userController.loginUser);
 router.post('/forgot-password', userController.forgotPassword);
 router.post('/verify-otp', userController.verifyOTP);

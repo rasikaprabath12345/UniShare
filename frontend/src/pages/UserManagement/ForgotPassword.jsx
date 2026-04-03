@@ -299,6 +299,17 @@ export default function ForgotPassword() {
                     setEmail(e.target.value); 
                     setMessage({ text: '', type: '' }); 
                   }}
+                  onBlur={(e) => {
+                    let inputValue = e.target.value.trim();
+                    
+                    // If input doesn't contain @ and matches IT number pattern, auto-append domain
+                    if (inputValue && !inputValue.includes('@')) {
+                      if (/^it\d+$/i.test(inputValue)) {
+                        inputValue = inputValue + '@my.sliit.lk';
+                        setEmail(inputValue);
+                      }
+                    }
+                  }}
                   required
                   disabled={loading}
                   autoFocus

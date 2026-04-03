@@ -209,9 +209,85 @@ const sendWarningEmail = async (recipientEmail, warningType, message) => {
   return sendEmail(recipientEmail, `⚠️ Alert: ${warningType} - Unishare Platform`, htmlContent);
 };
 
+/**
+ * Send Email Verification OTP
+ * @param {string} recipientEmail - Student email
+ * @param {string} otp - One-time password (6 digits)
+ * @param {string} fullName - User's full name (optional)
+ * @returns {Promise<Object>} - Returns { success: true, message, info }
+ * @throws {Error} - Throws error if email sending fails
+ */
+const sendVerificationEmail = async (recipientEmail, otp, fullName = 'UniShare Student') => {
+  const htmlContent = `
+    <div style="font-family: 'Poppins', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+      
+      <!-- Header with brand -->
+      <div style="text-align: center; padding: 20px 0; border-bottom: 2px solid #f0f0f0; margin-bottom: 30px;">
+        <h1 style="color: #0d2257; margin: 0; font-size: 28px;">🎓 UniShare</h1>
+        <p style="color: #999; font-size: 12px; margin: 5px 0 0 0;">Email Verification</p>
+      </div>
+
+      <!-- Main content -->
+      <div style="padding: 0 20px;">
+        <h2 style="color: #0d2257; font-size: 22px; margin: 0 0 10px 0;">Welcome to UniShare!</h2>
+        <p style="color: #666; font-size: 14px; line-height: 1.6; margin: 0 0 20px 0;">
+          Hi <strong>${fullName}</strong>,
+        </p>
+
+        <p style="color: #666; font-size: 14px; line-height: 1.6; margin: 0 0 20px 0;">
+          Thank you for registering with UniShare! To complete your registration and verify your email address, use the One-Time Password (OTP) below:
+        </p>
+
+        <!-- OTP Display Box -->
+        <div style="background: linear-gradient(135deg, #0d2257 0%, #1565C0 100%); padding: 30px; border-radius: 10px; text-align: center; margin: 25px 0; box-shadow: 0 4px 15px rgba(21, 101, 192, 0.25);">
+          <p style="color: rgba(255,255,255,0.8); font-size: 12px; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 1px;">Your Verification Code</p>
+          <h1 style="color: white; font-size: 48px; letter-spacing: 8px; margin: 0; font-family: 'Courier New', monospace; font-weight: 700;">${otp}</h1>
+        </div>
+
+        <!-- Important info -->
+        <div style="background-color: #f4f7ff; border-left: 4px solid #1565C0; padding: 15px; border-radius: 5px; margin: 20px 0;">
+          <p style="color: #0d2257; font-size: 13px; font-weight: 600; margin: 0 0 8px 0;">⏱️ Important Information</p>
+          <ul style="color: #666; font-size: 13px; margin: 0; padding-left: 20px; line-height: 1.8;">
+            <li>This OTP will expire in <strong>5 minutes</strong></li>
+            <li>Never share this code with anyone</li>
+            <li>You will need this code to verify your email during registration</li>
+          </ul>
+        </div>
+
+        <!-- Benefits section -->
+        <div style="background-color: #f0f7ff; border: 1px solid #d4e8f8; padding: 15px; border-radius: 5px; margin: 20px 0;">
+          <h3 style="color: #0d2257; font-size: 14px; font-weight: 600; margin: 0 0 10px 0;">Get Started with UniShare:</h3>
+          <ul style="color: #666; font-size: 13px; margin: 0; padding-left: 20px; line-height: 1.8;">
+            <li>📚 Access learning materials and resources</li>
+            <li>🎯 Join quizzes and track your progress</li>
+            <li>💬 Collaborate with peers in the forum</li>
+            <li>📊 View detailed performance reports</li>
+          </ul>
+        </div>
+
+        <!-- Action note -->
+        <p style="color: #666; font-size: 13px; line-height: 1.6; margin: 25px 0;">
+          Please return to the registration page and enter this OTP to complete your account setup.
+        </p>
+
+        <!-- Footer -->
+        <div style="border-top: 1px solid #eee; margin-top: 30px; padding-top: 20px; text-align: center; font-size: 12px; color: #999;">
+          <p style="margin: 0;">UniShare Platform - SLIIT Student Community</p>
+          <p style="margin: 5px 0 0 0;">For support, contact your administrator</p>
+        </div>
+      </div>
+
+    </div>
+  `;
+
+  // This will throw an error if email sending fails
+  return sendEmail(recipientEmail, "✉️ Email Verification - UniShare Registration", htmlContent);
+};
+
 module.exports = {
   sendEmail,
   sendForgotPasswordEmail,
   sendOTPEmail,
+  sendVerificationEmail,
   sendWarningEmail,
 };
