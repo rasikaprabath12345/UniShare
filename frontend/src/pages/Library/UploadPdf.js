@@ -11,6 +11,12 @@ const YEARS = [
 ];
 const PROGRESS_LABELS = ["Encrypting file…", "Uploading to servers…", "Processing PDF…", "Almost done…"];
 
+// ── Read current user from localStorage ──────────────────────────────────────
+const getUser = () => {
+  try { return JSON.parse(localStorage.getItem("user")); }
+  catch { return null; }
+};
+
 function UploadIcon({ color = "white", size = 22 }) {
   return (
     <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth={2}>
@@ -21,6 +27,10 @@ function UploadIcon({ color = "white", size = 22 }) {
 }
 
 export default function UploadPdf({ onClose }) {
+  // ── Resolve user once on mount ──────────────────────────────────────────────
+  const [user]      = useState(() => getUser());
+  const userId      = user?._id || user?.id || null;
+
   const [file, setFile]             = useState(null);
   const [dragging, setDragging]     = useState(false);
   const [title, setTitle]           = useState("");
@@ -39,8 +49,7 @@ export default function UploadPdf({ onClose }) {
   const tagInputRef = useRef();
   const intervalRef = useRef();
 
-  // Derive current step
-  const step = success ? 3 : file && title && module && year && desc ? 3 : file ? 2 : 1;
+  const step     = success ? 3 : file && title && module && year && desc ? 3 : file ? 2 : 1;
   const canSubmit = !!(file && title.trim().length > 2 && module && year && desc.trim().length > 10);
 
   const handleFile = (f) => {
@@ -72,13 +81,17 @@ export default function UploadPdf({ onClose }) {
     }
   };
 
-  // ── Real API call ──
+  // ── Submit with userId attached ─────────────────────────────────────────────
   const handleSubmit = async () => {
+    if (!userId) {
+      setError("You must be logged in to upload notes.");
+      return;
+    }
+
     setUploading(true);
     setError("");
     setProgress(10);
 
-    // Fake progress ticks while the real upload happens
     intervalRef.current = setInterval(() => {
       setProgress((prev) => Math.min(prev + 7, 85));
     }, 200);
@@ -90,13 +103,15 @@ export default function UploadPdf({ onClose }) {
       formData.append("module",      module);
       formData.append("year",        year);
       formData.append("description", desc);
-      formData.append("tags",        JSON.stringify(tags)); // controller parses this
+      formData.append("tags",        JSON.stringify(tags));
       formData.append("visibility",  visibility);
+      formData.append("userId",      userId);          // ← current user's ID
+      formData.append("isPublic",    visibility === "public" ? "true" : "false");
 
-      // ⚠️ Do NOT set Content-Type — browser sets multipart/form-data boundary automatically
       const res = await fetch("http://localhost:8000/Materials", {
         method: "POST",
         body: formData,
+        // Do NOT set Content-Type — browser sets multipart/form-data boundary automatically
       });
 
       clearInterval(intervalRef.current);
@@ -144,7 +159,9 @@ export default function UploadPdf({ onClose }) {
             <div className="un-header-icon"><UploadIcon /></div>
             <div>
               <div className="un-title">Upload Notes PDF</div>
-              <div className="un-subtitle">Share your knowledge with the community</div>
+              <div className="un-subtitle">
+                {user?.name ? `Uploading as ${user.name}` : "Share your knowledge with the community"}
+              </div>
             </div>
           </div>
           <button className="un-close-btn" onClick={onClose ?? (() => window.history.back())}>
@@ -157,7 +174,7 @@ export default function UploadPdf({ onClose }) {
         {/* ── Steps ── */}
         <div className="un-steps">
           {["Upload File", "Add Details", "Publish"].map((label, i) => {
-            const n = i + 1;
+            const n  = i + 1;
             const st = stepState(n);
             return (
               <>
@@ -325,16 +342,23 @@ export default function UploadPdf({ onClose }) {
             </div>
           </div>
 
+          {/* Not logged in warning */}
+          {!userId && (
+            <div style={{
+              background: "#fffbeb", border: "1px solid #fde68a",
+              color: "#92400e", borderRadius: 8,
+              padding: "10px 14px", fontSize: 13, marginTop: 16,
+            }}>
+              ⚠️ You are not logged in. Please log in before uploading.
+            </div>
+          )}
+
           {/* Error message */}
           {error && (
             <div style={{
-              background: "#fef2f2",
-              border: "1px solid #fecaca",
-              color: "#dc2626",
-              borderRadius: 8,
-              padding: "10px 14px",
-              fontSize: 13,
-              marginTop: 4,
+              background: "#fef2f2", border: "1px solid #fecaca",
+              color: "#dc2626", borderRadius: 8,
+              padding: "10px 14px", fontSize: 13, marginTop: 4,
             }}>
               ⚠️ {error}
             </div>
@@ -361,7 +385,7 @@ export default function UploadPdf({ onClose }) {
           </button>
           <button
             className="un-btn-submit"
-            disabled={!canSubmit || uploading}
+            disabled={!canSubmit || uploading || !userId}
             onClick={handleSubmit}
           >
             <UploadIcon size={16} />

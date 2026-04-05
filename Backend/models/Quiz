@@ -1,31 +1,131 @@
 const mongoose = require("mongoose");
 
-const questionSchema = new mongoose.Schema({
-  question:    { type: String, required: true },
-  options:     [{ type: String }],          // 4 options
-  correct:     { type: Number, required: true }, // 0-based index
-  explanation: { type: String, default: "" },
-}, { _id: false });
+/**
+ * ============================================
+ * QUESTION SCHEMA
+ * ============================================
+ */
+const questionSchema = new mongoose.Schema(
+  {
+    question: { type: String, required: true },
 
+    options: [
+      {
+        type: String,
+        required: true,
+      },
+    ], // ideally 4 options
+
+    correct: {
+      type: Number,
+      required: true, // 0-based index
+    },
+
+    explanation: {
+      type: String,
+      default: "",
+    },
+  },
+  { _id: false }
+);
+
+/**
+ * ============================================
+ * QUIZ SCHEMA
+ * ============================================
+ */
 const quizSchema = new mongoose.Schema(
   {
+    // 👇 USER REFERENCE (ADDED)
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Usermanagement", // must match your model name
+      required: true,
+    },
+
+    // 👇 MATERIAL REFERENCE
     material: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Material",
       required: true,
     },
-    materialTitle: { type: String, required: true },
-    questions:     [questionSchema],
-    // student result fields (null until submitted)
-    answers:    [{ type: Number, default: null }], // student's chosen index per question
-    score:      { type: Number, default: null },
-    total:      { type: Number, default: 20 },
-    percentage: { type: Number, default: null },
-    grade:      { type: String, default: null },  // A+, A, B, C, D, F
-    timeTaken:  { type: Number, default: null },  // seconds
-    submitted:  { type: Boolean, default: false },
+
+    materialTitle: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    // 👇 QUESTIONS
+    questions: {
+      type: [questionSchema],
+      validate: [
+        (val) => val.length > 0,
+        "Quiz must contain at least one question",
+      ],
+    },
+
+    // 👇 STUDENT ANSWERS
+    answers: [
+      {
+        type: Number,
+        default: null,
+      },
+    ],
+
+    // 👇 RESULTS
+    score: {
+      type: Number,
+      default: null,
+      min: 0,
+    },
+
+    total: {
+      type: Number,
+      default: 20,
+    },
+
+    percentage: {
+      type: Number,
+      default: null,
+      min: 0,
+      max: 100,
+    },
+
+    grade: {
+      type: String,
+      enum: ["A+", "A", "B", "C", "D", "F", null],
+      default: null,
+    },
+
+    timeTaken: {
+      type: Number,
+      default: null, // seconds
+      min: 0,
+    },
+
+    submitted: {
+      type: Boolean,
+      default: false,
+    },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    versionKey: false,
+  }
 );
 
+/**
+ * ============================================
+ * INDEXES (OPTIONAL OPTIMIZATION)
+ * ============================================
+ */
+quizSchema.index({ user: 1 });
+quizSchema.index({ material: 1 });
+
+/**
+ * ============================================
+ * EXPORT MODEL
+ * ============================================
+ */
 module.exports = mongoose.model("Quiz", quizSchema);

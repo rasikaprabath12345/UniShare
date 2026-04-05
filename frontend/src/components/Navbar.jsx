@@ -11,12 +11,12 @@ const ROLE_META = {
 
 /* ─── Nav links (only visible when logged in) ────────────────── */
 const NAV_LINKS = [
-  { label: "Home",    path: "/" },
-  { label: "Library", path: "/library" },
-  { label: "Kuppi",   path: "/Kuppi" },
-  { label: "Quiz",    path: "/quizzes" },
-  { label: "Forum",   path: "/forum" },
-  { label: "About",   path: "/about" },
+  { label: "Home",     path: "/" },
+  { label: "Library",  path: "/library" },
+  { label: "Kuppi",    path: "/Kuppi" },
+  { label: "Quiz",     path: "/quizzes" },
+  { label: "Forum",    path: "/forum" },
+  { label: "About",    path: "/about" },
 ];
 
 function getInitials(name = "") {
@@ -88,15 +88,20 @@ function Navbar() {
           letter-spacing: -0.5px;
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 0px;
           flex-shrink: 0;
         }
         .us-nav__logo-icon {
-          width: 32px; height: 32px;
-          background: linear-gradient(135deg, #0d2257, #1565C0);
+          width: 50px; height: 50px;
           border-radius: 8px;
+          overflow: hidden;
           display: flex; align-items: center; justify-content: center;
-          font-size: 1rem;
+          flex-shrink: 0;
+        }
+        .us-nav__logo-icon img {
+          width: 90%;
+          height: 90%;
+          object-fit: contain;
         }
 
         /* ── Nav links (authenticated) ── */
@@ -359,7 +364,9 @@ function Navbar() {
       <nav className="us-nav">
         {/* ── Logo ── */}
         <Link to={isLoggedIn ? "/" : "/login"} className="us-nav__logo">
-          <div className="us-nav__logo-icon">🎓</div>
+          <div className="us-nav__logo-icon">
+            <img src="./images/Logo.png" alt="" />
+          </div>
           UniShare
         </Link>
 

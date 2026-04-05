@@ -2,11 +2,54 @@ const express = require('express');
 const router = express.Router();
 
 const userController = require('../controllers/UserController');
+const { verifyToken } = require('../middleware/auth');
 
+// ════════════════════════════════════════════════════════════════════════
+// 🔴 CRITICAL: Place ALL static routes FIRST, then dynamic routes at END
+// ════════════════════════════════════════════════════════════════════════
+
+// ──────────────────────────────────────────────────────────────────────
+// POST ROUTES
+// ──────────────────────────────────────────────────────────────────────
 router.post('/register', userController.registerUser);
+router.post('/verify-email-otp', userController.verifyEmailOTP);
+router.post('/resend-verification-email', userController.resendVerificationEmail);
 router.post('/login', userController.loginUser);
+router.post('/forgot-password', userController.forgotPassword);
+router.post('/verify-otp', userController.verifyOTP);
+router.post('/reset-password', userController.resetPassword);
 
+// ──────────────────────────────────────────────────────────────────────
+// GET STATIC ROUTES (these don't use req.params.id)
+// ──────────────────────────────────────────────────────────────────────
 router.get('/', userController.getUsers);
+router.get('/debug/check-admins', async (req, res) => {
+  try {
+    const User = require('../models/Usermanagement');
+    const admins = await User.find({ role: 'admin' }).select('-password');
+    console.log('📋 Admin users:', admins);
+    res.json({
+      total: admins.length,
+      admins: admins
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ──────────────────────────────────────────────────────────────────────
+// PUT STATIC ROUTES - NON-ID ROUTES (protected/authenticated)
+// ──────────────────────────────────────────────────────────────────────
+router.put('/profile', verifyToken, userController.updateProfile);
+
+// 🔴 CRITICAL: Change password uses /account/change-password to avoid
+// any possible conflict with /:id route matching
+router.put('/account/change-password', verifyToken, userController.changePassword);
+
+// ──────────────────────────────────────────────────────────────────────
+// ALL DYNAMIC :id ROUTES - MUST BE AT THE VERY END
+// ──────────────────────────────────────────────────────────────────────
+// These match patterns like /507f1f77bcf86cd799439011 (a valid ObjectId)
 router.get('/:id', userController.getUserById);
 router.put('/:id', userController.updateUser);
 router.delete('/:id', userController.deleteUser);

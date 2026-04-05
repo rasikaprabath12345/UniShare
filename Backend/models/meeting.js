@@ -1,5 +1,4 @@
-// meeting.model.js
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
 const { Schema } = mongoose;
 
@@ -13,6 +12,7 @@ const meetingSchema = new Schema(
       ref: "User",
       required: true,
     },
+    ownerName: { type: String, trim: true, default: "Unknown Host" },
     scheduledAt: { type: Date, required: true },
     status: {
       type: String,
@@ -28,4 +28,4 @@ const meetingSchema = new Schema(
 
 const Meeting = mongoose.model("Meeting", meetingSchema);
 
-export default Meeting;
+module.exports = Meeting;
