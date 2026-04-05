@@ -14,6 +14,7 @@ import {
   Tag,
   Send,
   Trash2,
+  Edit,
 } from "lucide-react";
 import "./ForumThread.css";
 
@@ -52,6 +53,13 @@ export default function ForumThread() {
   const [comment, setComment] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
   const [userReaction, setUserReaction] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editBody, setEditBody] = useState("");
+  const [editCategory, setEditCategory] = useState("");
+  const [editTags, setEditTags] = useState("");
+  const [editErrors, setEditErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
 
   // Mock user data - replace with actual user context
   const currentUser = {
@@ -81,6 +89,112 @@ export default function ForumThread() {
       console.error("Failed to fetch thread:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEditClick = () => {
+    setEditTitle(thread.title);
+    setEditBody(thread.body);
+    setEditCategory(thread.category);
+    setEditTags(thread.tags?.join(", ") || "");
+    setEditErrors({});
+    setShowEditModal(true);
+  };
+
+  const validateEditForm = () => {
+    const nextErrors = {};
+    const cleanTitle = editTitle.trim();
+    const cleanBody = editBody.trim();
+    const parsedTags = editTags.split(",").map((t) => t.trim()).filter(Boolean);
+    
+    const TITLE_MIN = 8;
+    const TITLE_MAX = 120;
+    const BODY_MIN = 20;
+    const BODY_MAX = 1000;
+    const MAX_TAGS = 6;
+
+    if (!editCategory) {
+      nextErrors.category = "Please choose a valid category.";
+    }
+
+    if (!cleanTitle) {
+      nextErrors.title = "Title is required.";
+    } else if (cleanTitle.length < TITLE_MIN) {
+      nextErrors.title = `Title must be at least ${TITLE_MIN} characters.`;
+    } else if (cleanTitle.length > TITLE_MAX) {
+      nextErrors.title = `Title must be less than ${TITLE_MAX + 1} characters.`;
+    }
+
+    if (!cleanBody) {
+      nextErrors.body = "Description is required.";
+    } else if (cleanBody.length < BODY_MIN) {
+      nextErrors.body = `Description must be at least ${BODY_MIN} characters.`;
+    } else if (cleanBody.length > BODY_MAX) {
+      nextErrors.body = `Description must be less than ${BODY_MAX + 1} characters.`;
+    }
+
+    const invalidTag = parsedTags.find((t) => t.length < 2 || t.length > 20 || /\d/.test(t));
+    if (parsedTags.length > MAX_TAGS) {
+      nextErrors.tags = `Add up to ${MAX_TAGS} tags only.`;
+    } else if (invalidTag) {
+      nextErrors.tags = "Each tag must be 2-20 characters and contain no numbers.";
+    }
+
+    return { nextErrors, parsedTags, cleanTitle, cleanBody };
+  };
+
+  const handleSubmitEdit = async () => {
+    const { nextErrors, parsedTags, cleanTitle, cleanBody } = validateEditForm();
+    setEditErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
+
+    setSubmitting(true);
+    try {
+      const res = await fetch(`http://localhost:8000/forum/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: cleanTitle,
+          body: cleanBody,
+          category: editCategory,
+          tags: parsedTags,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setThread(data.data);
+        setShowEditModal(false);
+      } else {
+        setEditErrors({ submit: data.message || "Failed to update discussion" });
+      }
+    } catch (err) {
+      console.error("Failed to update discussion:", err);
+      setEditErrors({ submit: "Failed to update discussion" });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteThread = async () => {
+    if (!window.confirm("Are you sure you want to delete this discussion? This action cannot be undone.")) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`http://localhost:8000/forum/${id}`, {
+        method: "DELETE",
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        navigate("/forum");
+      } else {
+        alert("Failed to delete discussion: " + data.message);
+      }
+    } catch (err) {
+      console.error("Failed to delete discussion:", err);
+      alert("Failed to delete discussion");
     }
   };
 
@@ -262,6 +376,22 @@ export default function ForumThread() {
                 <span className="thread-stat">
                   <MessageSquare size={14} /> {thread.replies || 0} replies
                 </span>
+                <div className="thread-actions">
+                  <button 
+                    className="thread-action-btn edit-btn" 
+                    onClick={handleEditClick} 
+                    title="Edit discussion"
+                  >
+                    <Edit size={14} /> Edit
+                  </button>
+                  <button 
+                    className="thread-action-btn delete-btn" 
+                    onClick={handleDeleteThread}
+                    title="Delete discussion"
+                  >
+                    <Trash2 size={14} /> Delete
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -365,6 +495,95 @@ export default function ForumThread() {
           </div>
         </div>
       </div>
+
+      {/* Edit Modal */}
+      {showEditModal && (
+        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowEditModal(false)}>
+          <div className="modal-inner">
+            <div className="modal-header">
+              <h2 className="modal-title">Edit Discussion</h2>
+              <button className="modal-close" onClick={() => setShowEditModal(false)}>✕</button>
+            </div>
+
+            <div className="modal-body">
+              <label className="form-label">Category</label>
+              <select
+                className={`form-select${editErrors.category ? " form-field-error" : ""}`}
+                value={editCategory}
+                onChange={e => {
+                  setEditCategory(e.target.value);
+                  if (editErrors.category) setEditErrors((prev) => ({ ...prev, category: "" }));
+                }}
+                aria-invalid={Boolean(editErrors.category)}
+              >
+                {Object.keys(CATEGORY_CONFIG).map(c => (
+                  <option key={c} value={c}>{CATEGORY_ICONS[c]} {c}</option>
+                ))}
+              </select>
+              {editErrors.category && <div className="form-error-text">{editErrors.category}</div>}
+
+              <label className="form-label" style={{ marginTop: "1rem" }}>Title</label>
+              <input
+                className={`form-input${editErrors.title ? " form-field-error" : ""}`}
+                type="text"
+                value={editTitle}
+                onChange={e => {
+                  setEditTitle(e.target.value);
+                  if (editErrors.title) setEditErrors((prev) => ({ ...prev, title: "" }));
+                }}
+                maxLength={120}
+                aria-invalid={Boolean(editErrors.title)}
+              />
+              <div className="form-meta-row">
+                {editErrors.title ? <div className="form-error-text">{editErrors.title}</div> : <span />}
+                <span className="form-counter">{editTitle.trim().length}/120</span>
+              </div>
+
+              <label className="form-label" style={{ marginTop: "1rem" }}>Description</label>
+              <textarea
+                className={`form-textarea${editErrors.body ? " form-field-error" : ""}`}
+                value={editBody}
+                onChange={e => {
+                  setEditBody(e.target.value);
+                  if (editErrors.body) setEditErrors((prev) => ({ ...prev, body: "" }));
+                }}
+                rows={5}
+                maxLength={1000}
+                aria-invalid={Boolean(editErrors.body)}
+              />
+              <div className="form-meta-row">
+                {editErrors.body ? <div className="form-error-text">{editErrors.body}</div> : <span />}
+                <span className="form-counter">{editBody.trim().length}/1000</span>
+              </div>
+
+              <label className="form-label" style={{ marginTop: "1rem" }}>Tags <span className="form-hint">(comma separated)</span></label>
+              <input
+                className={`form-input${editErrors.tags ? " form-field-error" : ""}`}
+                type="text"
+                value={editTags}
+                onChange={e => {
+                  setEditTags(e.target.value);
+                  if (editErrors.tags) setEditErrors((prev) => ({ ...prev, tags: "" }));
+                }}
+                aria-invalid={Boolean(editErrors.tags)}
+              />
+              {editErrors.tags && <div className="form-error-text">{editErrors.tags}</div>}
+              {editErrors.submit && <div className="form-submit-error">{editErrors.submit}</div>}
+            </div>
+
+            <div className="modal-footer">
+              <button className="btn-cancel" onClick={() => setShowEditModal(false)}>Cancel</button>
+              <button
+                className="btn-post"
+                onClick={handleSubmitEdit}
+                disabled={submitting}
+              >
+                {submitting ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>

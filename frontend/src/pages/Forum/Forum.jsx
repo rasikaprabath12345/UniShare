@@ -16,6 +16,8 @@ import {
   Star,
   TrendingUp,
   Filter,
+  Edit,
+  Trash2,
 } from "lucide-react";
 import "./Forum.css";
 
@@ -70,7 +72,7 @@ function SkeletonThread() {
 }
 
 // ── Thread card ───────────────────────────────────────────────────────────────
-function ThreadCard({ thread, onReaction }) {
+function ThreadCard({ thread, onReaction, onDelete, onEdit }) {
   const cfg = CATEGORY_CONFIG[thread.category] || CATEGORY_CONFIG["General"];
   const icon = CATEGORY_ICONS[thread.category] || "💬";
 
@@ -188,6 +190,28 @@ function ThreadCard({ thread, onReaction }) {
             >
               Read more <ChevronRight size={13} />
             </button>
+            <div className="thread-actions-quick">
+              <button 
+                className="thread-quick-btn edit" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit && onEdit(thread._id);
+                }} 
+                title="Edit discussion"
+              >
+                <Edit size={13} />
+              </button>
+              <button 
+                className="thread-quick-btn delete" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete && onDelete(thread._id);
+                }}
+                title="Delete discussion"
+              >
+                <Trash2 size={13} />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -233,7 +257,7 @@ function NewPostModal({ onClose, onSubmit }) {
     const cleanTitle = title.trim();
     const cleanBody = body.trim();
     const parsedTags = tags.split(",").map((t) => t.trim()).filter(Boolean);
-    const invalidTag = parsedTags.find((t) => t.length < 2 || t.length > 24);
+    const invalidTag = parsedTags.find((t) => t.length < 2 || t.length > 20 || /\d/.test(t));
 
     if (!category || !Object.prototype.hasOwnProperty.call(CATEGORY_CONFIG, category)) {
       nextErrors.category = "Please choose a valid category.";
@@ -258,7 +282,17 @@ function NewPostModal({ onClose, onSubmit }) {
     if (parsedTags.length > MAX_TAGS) {
       nextErrors.tags = `Add up to ${MAX_TAGS} tags only.`;
     } else if (invalidTag) {
-      nextErrors.tags = "Each tag must be between 2 and 24 characters.";
+      const invalidDetails = parsedTags
+        .map((t) => {
+          const issues = [];
+          if (t.length < 2) issues.push("at least 2 characters");
+          if (t.length > 20) issues.push("max 20 characters");
+          if (/\d/.test(t)) issues.push("no numbers");
+          return issues.length > 0 ? `'${t}' (${issues.join(", ")})` : null;
+        })
+        .filter(Boolean)
+        .join(", ");
+      nextErrors.tags = `Invalid tags: ${invalidDetails}`;
     }
 
     return { nextErrors, parsedTags, cleanTitle, cleanBody };
@@ -465,6 +499,30 @@ export default function Forum() {
     }
   };
 
+  const handleDelete = async (threadId) => {
+    if (!window.confirm("Are you sure you want to delete this discussion? This action cannot be undone.")) {
+      return;
+    }
+    try {
+      const res = await fetch(`http://localhost:8000/forum/${threadId}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (data.success) {
+        setThreads(prevThreads => prevThreads.filter(t => t._id !== threadId));
+      } else {
+        alert("Failed to delete discussion: " + (data.message || "Unknown error"));
+      }
+    } catch (err) {
+      console.error("Failed to delete discussion:", err);
+      alert("Failed to delete discussion");
+    }
+  };
+
+  const handleEdit = (threadId) => {
+    window.location.href = `/forum/${threadId}`;
+  };
+
   const allCategories = ["All", ...Object.keys(CATEGORY_CONFIG)];
 
   return (
@@ -585,7 +643,7 @@ export default function Forum() {
             </div>
           ) : (
             threads.map((thread) => (
-              <ThreadCard key={thread._id} thread={thread} onReaction={handleReaction} />
+              <ThreadCard key={thread._id} thread={thread} onReaction={handleReaction} onDelete={handleDelete} onEdit={handleEdit} />
             ))
           )}
         </main>
