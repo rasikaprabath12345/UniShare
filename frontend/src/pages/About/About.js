@@ -17,12 +17,24 @@ import {
 } from "lucide-react";
 
 function About() {
+  const heroStyle = {
+    backgroundImage: `linear-gradient(135deg, rgba(21, 101, 192, 0.5), rgba(30, 136, 229, 0.5)), url(${process.env.PUBLIC_URL}/images/background2.jpg)`
+  };
+
+  const featuresStyle = {
+    backgroundImage: `linear-gradient(135deg, rgba(255,255,255,0.7), rgba(244,247,255,0.7)), url(${process.env.PUBLIC_URL}/images/background.png)`
+  };
+
+  const statsStyle = {
+    backgroundImage: `linear-gradient(135deg, rgba(21, 101, 192, 0.55), rgba(30, 136, 229, 0.55)), url(${process.env.PUBLIC_URL}/images/image1.jpg)`
+  };
+
   return (
     <div className="about-page">
       <Navbar />
 
       {/* Hero Section */}
-      <section className="about-hero">
+      <section className="about-hero" style={heroStyle}>
         <div className="about-hero-content">
           <h1>About UniShare</h1>
           <p>
@@ -44,7 +56,7 @@ function About() {
       </section>
 
       {/* Features */}
-      <section className="about-features">
+      <section className="about-features" style={featuresStyle}>
         <h2>Our Features</h2>
 
         <div className="feature-grid">
@@ -129,7 +141,7 @@ function About() {
       </section>
 
       {/* Stats */}
-      <section className="about-stats">
+      <section className="about-stats" style={statsStyle}>
         <div className="stat">
           <h3>10K+</h3>
           <p>Students</p>
