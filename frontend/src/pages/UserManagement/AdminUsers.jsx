@@ -2,25 +2,28 @@ import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import {
   Users, Flag, Trash2, AlertTriangle, Eye, X, CheckCircle,
-  XCircle, Download, Search, Shield, ChevronDown, Bell,
-  FileText, Clock, User, Mail, Hash, BookOpen, GraduationCap,
+  XCircle, Download, Search, Shield, Bell,
+  FileText, Clock, User, Hash, BookOpen,
   MessageSquare, BarChart2, RefreshCw, LogOut,
 } from "lucide-react";
+import Navbar from "../../components/Navbar";
 
 /* ─────────────────────────── MOCK DATA ─────────────────────────── */
 const MOCK_USERS = [
-  { _id: "u1", fullName: "Kavisha Perera",   studentId: "IT21234567", email: "kavisha.p@students.nsbm.ac.lk",   faculty: "Faculty of Computing",  academicYear: "2nd Year", semester: "Sem 3", warningCount: 0, isActive: true },
-  { _id: "u2", fullName: "Dineth Silva",     studentId: "IT21345678", email: "dineth.s@students.nsbm.ac.lk",   faculty: "Faculty of Computing",  academicYear: "3rd Year", semester: "Sem 5", warningCount: 1, isActive: true },
-  { _id: "u3", fullName: "Amaya Fernando",  studentId: "BM21456789", email: "amaya.f@students.nsbm.ac.lk",    faculty: "Faculty of Business",   academicYear: "1st Year", semester: "Sem 1", warningCount: 2, isActive: false },
-  { _id: "u4", fullName: "Rasith Jayaweera",studentId: "EN21567890", email: "rasith.j@students.nsbm.ac.lk",   faculty: "Faculty of Engineering",academicYear: "2nd Year", semester: "Sem 4", warningCount: 0, isActive: true },
-  { _id: "u5", fullName: "Nimali Bandara",  studentId: "SC21678901", email: "nimali.b@students.nsbm.ac.lk",   faculty: "Faculty of Science",    academicYear: "3rd Year", semester: "Sem 6", warningCount: 1, isActive: true },
+  { _id: "u1", fullName: "Kavisha Perera",   studentId: "IT21234567", email: "IT21234567@my.sliit.lk",   faculty: "Faculty of Computing",  academicYear: "2nd Year", semester: "Sem 3", warningCount: 0, isActive: true },
+  { _id: "u2", fullName: "Dineth Silva",     studentId: "IT21345678", email: "IT21345678@my.sliit.lk",   faculty: "Faculty of Computing",  academicYear: "3rd Year", semester: "Sem 5", warningCount: 1, isActive: true },
+  { _id: "u3", fullName: "Amaya Fernando",  studentId: "BM21456789", email: "BM21456789@my.sliit.lk",    faculty: "Faculty of Business",   academicYear: "1st Year", semester: "Sem 1", warningCount: 2, isActive: false },
+  { _id: "u4", fullName: "Rasith Jayaweera",studentId: "EN21567890", email: "EN21567890@my.sliit.lk",   faculty: "Faculty of Engineering",academicYear: "2nd Year", semester: "Sem 4", warningCount: 0, isActive: true },
+  { _id: "u5", fullName: "Nimali Bandara",  studentId: "SC21678901", email: "SC21678901@my.sliit.lk",   faculty: "Faculty of Science",    academicYear: "3rd Year", semester: "Sem 6", warningCount: 1, isActive: true },
 ];
 
 const MOCK_REPORTS = [
-  { _id: "r1", contentTitle: "Data Structures — Exam Cheats",  contentType: "File",    reason: "Inappropriate Content", description: "This file appears to contain exam answer leaks which violate academic integrity policies.", reportedBy: "Nimali Bandara", reportedUserId: "u2", date: "2025-07-18", status: "pending" },
-  { _id: "r2", contentTitle: "Comment on ML Notes thread",    contentType: "Comment", reason: "Harassment",            description: "User left abusive language targeting another student in the comments section.", reportedBy: "Kavisha Perera", reportedUserId: "u3", date: "2025-07-17", status: "pending" },
-  { _id: "r3", contentTitle: "OS Lab Manual 2024",            contentType: "File",    reason: "Copyright Violation",   description: "This lab manual appears to be scanned directly from the official university textbook without permission.", reportedBy: "Rasith Jayaweera", reportedUserId: "u5", date: "2025-07-15", status: "reviewed" },
-  { _id: "r4", contentTitle: "Business Law Summary Notes",    contentType: "File",    reason: "Spam / Low Quality",    description: "The uploaded document is just a blank file with no real content, just filler text to inflate upload count.", reportedBy: "Dineth Silva", reportedUserId: "u3", date: "2025-07-12", status: "rejected" },
+  { _id: "r1", contentTitle: "Inappropriate Forum Post",  contentType: "Forum",    reason: "Offensive Language", description: "The user posted offensive content in the general forum that violates community guidelines.", reportedBy: "John Doe", reportedUserId: "u2", reportedUserName: "Dineth Silva", date: "2024-03-28", status: "pending" },
+  { _id: "r2", contentTitle: "Quiz Answer Leak",    contentType: "Quiz", reason: "Cheating",            description: "User shared quiz answers in the group chat, compromising test integrity.", reportedBy: "Admin", reportedUserId: "u3", reportedUserName: "Amaya Fernando", date: "2024-03-25", status: "reviewed" },
+  { _id: "r3", contentTitle: "Spam Material Upload",            contentType: "File",    reason: "Spam Content",   description: "Multiple irrelevant files uploaded to the library without description.", reportedBy: "Sarah Wilson", reportedUserId: "u5", reportedUserName: "Nimali Bandara", date: "2024-03-20", status: "rejected" },
+  { _id: "r4", contentTitle: "Harassment in Comments",    contentType: "Comment",    reason: "Harassment",    description: "User made derogatory comments targeting another student.", reportedBy: "Emma Davis", reportedUserId: "u1", reportedUserName: "Kavisha Perera", date: "2024-03-26", status: "pending" },
+  { _id: "r5", contentTitle: "Plagiarized Report",            contentType: "File",    reason: "Plagiarism",   description: "Submitted report appears to be copied from online sources without proper citation.", reportedBy: "Professor Admin", reportedUserId: "u5", reportedUserName: "Nimali Bandara", date: "2024-03-22", status: "reviewed" },
+  { _id: "r6", contentTitle: "Forum Advertisement",    contentType: "Forum",    reason: "Unauthorized Advertising",    description: "User posting commercial advertisements in educational forum.", reportedBy: "Moderator", reportedUserId: "u4", reportedUserName: "Rasith Jayaweera", date: "2024-03-27", status: "pending" },
 ];
 
 /* ─────────────────────────── HELPERS ─────────────────────────── */
@@ -55,6 +58,7 @@ body { font-family: 'Poppins', sans-serif; background: #f4f7ff; color: #1a1a2e; 
   position: fixed; top: 0; left: 0; bottom: 0;
   z-index: 50;
   box-shadow: 4px 0 24px rgba(13,34,87,0.18);
+  padding-top: 70px;
 }
 .sidebar-logo {
   padding: 28px 24px 22px;
@@ -411,19 +415,19 @@ function DeleteModal({ target, onClose, onConfirm }) {
           <div style={{ width: 34, height: 34, borderRadius: 10, background: "#fce8ef", color: "#993556", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <Trash2 size={16} />
           </div>
-          <div className="modal-title">Delete User Account</div>
+          <div className="modal-title">Remove User Account</div>
           <button className="modal-close" onClick={onClose}><X size={15} /></button>
         </div>
         <div className="modal-body">
           <p style={{ fontSize: "0.82rem", color: "#444", lineHeight: 1.6 }}>
-            Are you sure you want to permanently delete <strong style={{ color: "#0d2257" }}>{target?.fullName}</strong>'s account?
+            Are you sure you want to permanently remove <strong style={{ color: "#0d2257" }}>{target?.fullName}</strong>'s account?
             This action <strong style={{ color: "#993556" }}>cannot be undone</strong> and will remove all their uploads and activity.
           </p>
         </div>
         <div className="modal-footer">
           <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
           <button className="btn btn-danger" onClick={() => onConfirm(target._id)}>
-            <Trash2 size={13} /> Delete Permanently
+            <Trash2 size={13} /> Remove Permanently
           </button>
         </div>
       </div>
@@ -432,7 +436,7 @@ function DeleteModal({ target, onClose, onConfirm }) {
 }
 
 /* ─────────────────────────── REVIEW MODAL ─────────────────────────── */
-function ReviewModal({ report, users, onClose, onApproveWarn, onApproveDelete, onReject }) {
+function ReviewModal({ report, users, adminId, onClose, onApproveWarn, onApproveDelete, onReject }) {
   const reportedUser = users.find(u => u._id === report.reportedUserId);
   const [warnMsg, setWarnMsg] = useState("");
   const [action, setAction] = useState(null); // null | 'approve' | 'reject'
@@ -514,8 +518,14 @@ function ReviewModal({ report, users, onClose, onApproveWarn, onApproveDelete, o
                 <button className="btn btn-warning" style={{ flex: 1 }} onClick={() => setAction("approve-warn")}>
                   <AlertTriangle size={13} /> Send Warning
                 </button>
-                <button className="btn btn-danger" style={{ flex: 1 }} onClick={() => onApproveDelete(report._id, reportedUser?._id)}>
-                  <Trash2 size={13} /> Delete User
+                <button 
+                  className="btn btn-danger" 
+                  style={{ flex: 1, opacity: adminId === reportedUser?._id ? 0.5 : 1, cursor: adminId === reportedUser?._id ? "not-allowed" : "pointer" }}
+                  disabled={adminId === reportedUser?._id}
+                  title={adminId === reportedUser?._id ? "Cannot delete your own account" : ""}
+                  onClick={() => onApproveDelete(report._id, reportedUser?._id)}
+                >
+                  <Trash2 size={13} /> Remove User
                 </button>
               </div>
               <button className="btn btn-ghost btn-sm" onClick={() => setAction(null)}>← Back</button>
@@ -549,6 +559,102 @@ function ReviewModal({ report, users, onClose, onApproveWarn, onApproveDelete, o
   );
 }
 
+/* ─────────────────────────── STUDENT REPORTS MODAL ─────────────────────────── */
+function StudentReportsModal({ student, reports, onClose }) {
+  const studentReports = reports.filter(r => r.reportedUserId === student._id);
+  const pendingCount = studentReports.filter(r => r.status === "pending").length;
+  const reviewedCount = studentReports.filter(r => r.status === "reviewed").length;
+  const rejectedCount = studentReports.filter(r => r.status === "rejected").length;
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" style={{ maxWidth: 700, maxHeight: "85vh", overflow: "hidden", display: "flex", flexDirection: "column" }} onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <div style={{ width: 34, height: 34, borderRadius: 10, background: "#e8f0fe", color: "#1565C0", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Flag size={16} />
+          </div>
+          <div>
+            <div className="modal-title">Report History</div>
+            <div style={{ fontSize: "0.68rem", color: "#aaa", marginTop: 2 }}>{student.fullName} ({student.studentId})</div>
+          </div>
+          <button className="modal-close" onClick={onClose}><X size={15} /></button>
+        </div>
+
+        {studentReports.length === 0 ? (
+          <div className="modal-body" style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+            <div className="empty-icon" style={{ width: 50, height: 50, marginBottom: 12 }}><Flag size={20} /></div>
+            <div className="empty-title" style={{ marginBottom: 4 }}>No Reports Found</div>
+            <div className="empty-sub">This student has not been reported.</div>
+          </div>
+        ) : (
+          <>
+            <div style={{ padding: "14px 28px", background: "#f8faff", borderBottom: "1px solid #e8f0fe", display: "flex", gap: 12 }}>
+              <div style={{ flex: 1, textAlign: "center" }}>
+                <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "#0d2257" }}>{studentReports.length}</div>
+                <div style={{ fontSize: "0.62rem", color: "#aaa" }}>Total</div>
+              </div>
+              <div style={{ flex: 1, textAlign: "center" }}>
+                <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "#b7830a" }}>{pendingCount}</div>
+                <div style={{ fontSize: "0.62rem", color: "#aaa" }}>Pending</div>
+              </div>
+              <div style={{ flex: 1, textAlign: "center" }}>
+                <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "#1565C0" }}>{reviewedCount}</div>
+                <div style={{ fontSize: "0.62rem", color: "#aaa" }}>Reviewed</div>
+              </div>
+              <div style={{ flex: 1, textAlign: "center" }}>
+                <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "#888" }}>{rejectedCount}</div>
+                <div style={{ fontSize: "0.62rem", color: "#aaa" }}>Rejected</div>
+              </div>
+            </div>
+            <div style={{ flex: 1, overflowY: "auto", padding: "14px 0" }}>
+              {studentReports.map((report, idx) => (
+                <div key={report._id} style={{ padding: "14px 28px", borderBottom: "1px solid #f0f4ff", display: "grid", gridTemplateColumns: "1fr auto", gap: 14, alignItems: "start" }}>
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                      <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#0d2257" }}>{report.contentTitle}</div>
+                      <span className={`report-badge-type ${report.contentType === "File" ? "type-file" : "type-comment"}`}>{report.contentType}</span>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10, marginBottom: 8 }}>
+                      <div>
+                        <div style={{ fontSize: "0.62rem", color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Reason</div>
+                        <div style={{ fontSize: "0.72rem", color: "#444", fontWeight: 600 }}>{report.reason}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: "0.62rem", color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Reported By</div>
+                        <div style={{ fontSize: "0.72rem", color: "#444", fontWeight: 600 }}>{report.reportedBy}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: "0.62rem", color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Reported User</div>
+                        <div style={{ fontSize: "0.72rem", color: "#0d2257", fontWeight: 600 }}>{report.reportedUserName}</div>
+                      </div>
+                    </div>
+                    <div style={{ fontSize: "0.72rem", color: "#666", lineHeight: 1.5, background: "#f8faff", padding: "8px 10px", borderRadius: 6, marginBottom: 8 }}>
+                      {report.description}
+                    </div>
+                    <div style={{ fontSize: "0.68rem", color: "#aaa" }}>
+                      {new Date(report.date).toLocaleDateString()} at {new Date(report.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </div>
+                  </div>
+                  <span className={`badge ${
+                    report.status === "pending" ? "badge-pending" :
+                    report.status === "reviewed" ? "badge-reviewed" : "badge-rejected"
+                  }`} style={{ whiteSpace: "nowrap" }}>
+                    {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        <div className="modal-footer">
+          <button className="btn btn-ghost" onClick={onClose}>Close</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─────────────────────────── MAIN COMPONENT ─────────────────────────── */
 export default function AdminPanel() {
   const [tab, setTab] = useState("users");
@@ -561,6 +667,7 @@ export default function AdminPanel() {
   const [warnTarget, setWarnTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [reviewTarget, setReviewTarget] = useState(null);
+  const [studentReportsTarget, setStudentReportsTarget] = useState(null);
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -577,12 +684,21 @@ export default function AdminPanel() {
 
   useEffect(() => {
     axios.get(`${API}/reports`, { headers: authHeader() })
-      .then(r => setReports(r.data))
+      .then(r => {
+        // Use real data if available, otherwise use mock data
+        setReports(r.data && r.data.length > 0 ? r.data : MOCK_REPORTS);
+      })
       .catch(() => setReports(MOCK_REPORTS));
   }, []);
 
   /* ── Handlers ── */
   const handleDelete = async (id) => {
+    const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+    if (currentUser._id === id) {
+      showToast("Cannot delete your own admin account.", "danger");
+      setDeleteTarget(null);
+      return;
+    }
     try {
       await axios.delete(`${API}/users/${id}`, { headers: authHeader() });
     } catch {}
@@ -625,6 +741,12 @@ export default function AdminPanel() {
   };
 
   const handleApproveDelete = async (reportId, userId) => {
+    const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+    if (currentUser._id === userId) {
+      showToast("Cannot delete your own admin account.", "danger");
+      setReviewTarget(null);
+      return;
+    }
     try {
       await axios.patch(`${API}/reports/${reportId}`, { status: "reviewed" }, { headers: authHeader() });
     } catch {}
@@ -665,10 +787,12 @@ export default function AdminPanel() {
   ];
 
   const adminName = (JSON.parse(localStorage.getItem("user") || "{}")).fullName || "Admin";
+  const adminId = (JSON.parse(localStorage.getItem("user") || "{}"))._id || null;
   const adminInitials = adminName.split(" ").map(n => n[0]).slice(0,2).join("");
 
   return (
     <div>
+      <Navbar />
       <style>{CSS}</style>
 
       <div className="admin-shell">
@@ -797,40 +921,40 @@ export default function AdminPanel() {
                           <th>Faculty</th>
                           <th>Year / Sem</th>
                           <th>Warnings</th>
-                          <th>Status</th>
-                          <th>Actions</th>
+                          <th>Reports</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredUsers.map(u => (
-                          <tr key={u._id}>
-                            <td className="td-id">{u.studentId}</td>
-                            <td className="td-name">{u.fullName}</td>
-                            <td className="td-email">{u.email}</td>
-                            <td style={{ fontSize: "0.73rem" }}>{u.faculty.replace("Faculty of ", "")}</td>
-                            <td style={{ fontSize: "0.73rem" }}>{u.academicYear} · {u.semester}</td>
-                            <td>
-                              <span className={`warn-count ${u.warningCount === 0 ? "warn-0" : u.warningCount === 1 ? "warn-1" : "warn-2plus"}`}>
-                                {u.warningCount}
-                              </span>
-                            </td>
-                            <td>
-                              <span className={`badge ${u.isActive ? "badge-active" : "badge-inactive"}`}>
-                                {u.isActive ? "Active" : "Inactive"}
-                              </span>
-                            </td>
-                            <td>
-                              <div className="actions-cell">
-                                <button className="btn btn-warning btn-sm" onClick={() => setWarnTarget(u)}>
-                                  <AlertTriangle size={11} /> Warn
-                                </button>
-                                <button className="btn btn-danger btn-sm" onClick={() => setDeleteTarget(u)}>
-                                  <Trash2 size={11} /> Delete
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
+                        {filteredUsers.map(u => {
+                          const userReportCount = reports.filter(r => r.reportedUserId === u._id).length;
+                          return (
+                            <tr key={u._id}>
+                              <td className="td-id">{u.studentId}</td>
+                              <td className="td-name">{u.fullName}</td>
+                              <td className="td-email">{u.email}</td>
+                              <td style={{ fontSize: "0.73rem" }}>{u.faculty.replace("Faculty of ", "")}</td>
+                              <td style={{ fontSize: "0.73rem" }}>{u.academicYear} · {u.semester}</td>
+                              <td>
+                                <span className={`warn-count ${u.warningCount === 0 ? "warn-0" : u.warningCount === 1 ? "warn-1" : "warn-2plus"}`}>
+                                  {u.warningCount}
+                                </span>
+                              </td>
+                              <td>
+                                {userReportCount > 0 ? (
+                                  <button 
+                                    className="btn btn-primary btn-sm" 
+                                    onClick={() => setStudentReportsTarget(u)}
+                                    title={`View ${userReportCount} report${userReportCount !== 1 ? 's' : ''}`}
+                                  >
+                                    <Flag size={11} /> {userReportCount}
+                                  </button>
+                                ) : (
+                                  <span style={{ fontSize: "0.7rem", color: "#aaa", fontWeight: 600 }}>—</span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   )}
@@ -869,6 +993,7 @@ export default function AdminPanel() {
                           <th>Type</th>
                           <th>Reason</th>
                           <th>Reported By</th>
+                          <th>Reported User</th>
                           <th>Date</th>
                           <th>Status</th>
                           <th>Action</th>
@@ -885,6 +1010,7 @@ export default function AdminPanel() {
                             </td>
                             <td style={{ fontSize: "0.73rem" }}>{r.reason}</td>
                             <td style={{ fontSize: "0.73rem" }}>{r.reportedBy}</td>
+                            <td style={{ fontSize: "0.73rem", color: "#0d2257" }}>{r.reportedUserName}</td>
                             <td style={{ fontSize: "0.7rem", color: "#aaa" }}>{r.date}</td>
                             <td>
                               <span className={`badge ${
@@ -980,11 +1106,18 @@ export default function AdminPanel() {
       {deleteTarget && <DeleteModal target={deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDelete} />}
       {reviewTarget && (
         <ReviewModal
-          report={reviewTarget} users={users}
+          report={reviewTarget} users={users} adminId={adminId}
           onClose={() => setReviewTarget(null)}
           onApproveWarn={handleApproveWarn}
           onApproveDelete={handleApproveDelete}
           onReject={handleReject}
+        />
+      )}
+      {studentReportsTarget && (
+        <StudentReportsModal
+          student={studentReportsTarget}
+          reports={reports}
+          onClose={() => setStudentReportsTarget(null)}
         />
       )}
 

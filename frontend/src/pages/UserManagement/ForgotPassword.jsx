@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 /* ── Scoped styles — matches UniShare theme (Navy #0d2257 · Blue #1565C0 · Poppins) ── */
@@ -121,28 +121,6 @@ const styles = `
   .fp-alert-info    { background: var(--blue-pale);  border: 1px solid rgba(21,101,192,0.22); color: #0d3a7a; }
   .fp-alert-success { background: #e8f5e9;            border: 1px solid rgba(46,125,50,0.22);  color: #1b5e20; }
 
-  /* ── Success state card ── */
-  .fp-success-card {
-    text-align: center; padding: 32px 24px;
-    background: var(--blue-ghost); border: 1px solid var(--grey-200);
-    border-radius: 12px; margin-bottom: 24px;
-  }
-  .fp-success-icon {
-    width: 64px; height: 64px; background: #e8f5e9;
-    border-radius: 50%; display: flex; align-items: center; justify-content: center;
-    font-size: 1.8rem; margin: 0 auto 16px;
-    border: 1px solid rgba(46,125,50,0.18);
-  }
-  .fp-success-title { font-size: 1.1rem; font-weight: 700; color: var(--navy); margin-bottom: 8px; }
-  .fp-success-text  { font-size: 0.83rem; color: var(--text-sub); line-height: 1.7; }
-  .fp-success-email {
-    display: inline-block; margin-top: 10px;
-    background: var(--blue-pale); color: var(--blue);
-    font-size: 0.80rem; font-weight: 600;
-    padding: 4px 12px; border-radius: 20px;
-    border: 1px solid rgba(21,101,192,0.18);
-  }
-
   /* ── Group / Input ── */
   .fp-group { margin-bottom: 14px; }
   .fp-label { display: block; font-size: 0.77rem; font-weight: 600; color: var(--navy); margin-bottom: 5px; letter-spacing: 0.02em; }
@@ -178,17 +156,6 @@ const styles = `
   }
   .fp-btn:disabled { opacity: 0.60; cursor: not-allowed; }
 
-  /* ── Resend button ── */
-  .fp-resend-btn {
-    width: 100%; padding: 11px;
-    background: transparent; color: var(--blue);
-    border: 1.5px solid var(--grey-200); border-radius: 8px;
-    font-family: var(--font); font-size: 0.87rem; font-weight: 600;
-    cursor: pointer; margin-top: 10px;
-    transition: border-color 0.2s, background 0.2s;
-  }
-  .fp-resend-btn:hover { border-color: var(--blue); background: var(--blue-ghost); }
-
   /* ── Back link row ── */
   .fp-back {
     display: flex; align-items: center; justify-content: center;
@@ -210,48 +177,44 @@ const styles = `
 `;
 
 export default function ForgotPassword() {
-  const [email,   setEmail]   = useState('');
-  const [message, setMessage] = useState({ text: '', type: '' }); // type: 'info' | 'success' | 'error'
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState({ text: '', type: '' });
   const [loading, setLoading] = useState(false);
-  const [sent,    setSent]    = useState(false);
-  const [sentTo,  setSentTo]  = useState('');
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage({ text: '', type: '' });
 
-    if (!email.endsWith('@my.sliit.lk'))
-      return setMessage({ text: 'Please use your @my.sliit.lk SLIIT email address.', type: 'error' });
+    // Validate email format
+    if (!email) {
+      return setMessage({ text: 'Please enter your email address', type: 'error' });
+    }
+
+    if (!email.endsWith('@my.sliit.lk')) {
+      return setMessage({ text: 'Please use your @my.sliit.lk SLIIT email address', type: 'error' });
+    }
 
     setLoading(true);
-    setMessage({ text: 'Sending reset link…', type: 'info' });
+    setMessage({ text: 'Sending OTP...', type: 'info' });
 
     try {
+      // Send OTP request to backend
       await axios.post('http://localhost:8000/api/users/forgot-password', {
         email: email.toLowerCase().trim(),
       });
-      setSentTo(email.toLowerCase().trim());
-      setSent(true);
-      setMessage({ text: '', type: '' });
-    } catch (err) {
-      setMessage({
-        text: err.response?.data?.message || 'Failed to send reset email. Please try again.',
-        type: 'error',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const handleResend = async () => {
-    setLoading(true);
-    setMessage({ text: 'Resending reset link…', type: 'info' });
-    try {
-      await axios.post('http://localhost:8000/api/users/forgot-password', { email: sentTo });
-      setMessage({ text: 'Reset link resent successfully!', type: 'success' });
+      // Success - navigate to reset password page
+      setMessage({ text: 'OTP sent successfully! Redirecting...', type: 'success' });
+      
+      // Redirect to reset password page after a short delay
+      setTimeout(() => {
+        navigate('/reset-password', { state: { email: email.toLowerCase().trim() } });
+      }, 1500);
+
     } catch (err) {
       setMessage({
-        text: err.response?.data?.message || 'Failed to resend. Please try again.',
+        text: err.response?.data?.message || 'Failed to send OTP. Please try again.',
         type: 'error',
       });
     } finally {
@@ -286,15 +249,15 @@ export default function ForgotPassword() {
             <div className="fp-steps">
               <div className="fp-step">
                 <div className="fp-step-num">1</div>
-                <p className="fp-step-text">Enter your <strong style={{color:'rgba(255,255,255,0.85)'}}>@my.sliit.lk</strong> email address below</p>
+                <p className="fp-step-text">Enter your <strong style={{color:'rgba(255,255,255,0.85)'}}>@my.sliit.lk</strong> email address</p>
               </div>
               <div className="fp-step">
                 <div className="fp-step-num">2</div>
-                <p className="fp-step-text">Check your inbox for the password reset link</p>
+                <p className="fp-step-text">Receive a 6-digit OTP code in your inbox</p>
               </div>
               <div className="fp-step">
                 <div className="fp-step-num">3</div>
-                <p className="fp-step-text">Follow the link to create a new secure password</p>
+                <p className="fp-step-text">Enter the OTP and create a new password</p>
               </div>
             </div>
 
@@ -306,9 +269,9 @@ export default function ForgotPassword() {
           <div className="fp-form-wrap">
 
             <p className="fp-eyebrow">Account recovery</p>
-            <h1 className="fp-title">Reset Password</h1>
+            <h1 className="fp-title">Forgot Password?</h1>
             <p className="fp-subtitle">
-              Enter your SLIIT email and we'll send you a link to reset your password
+              Enter your SLIIT email address and we'll send you an OTP code to reset your password
             </p>
 
             {/* ── Inline status message ── */}
@@ -321,52 +284,42 @@ export default function ForgotPassword() {
               </div>
             )}
 
-            {/* ── Success state ── */}
-            {sent ? (
-              <>
-                <div className="fp-success-card">
-                  <div className="fp-success-icon">📬</div>
-                  <p className="fp-success-title">Check your inbox</p>
-                  <p className="fp-success-text">
-                    We've sent a password reset link to
-                  </p>
-                  <span className="fp-success-email">{sentTo}</span>
-                  <p className="fp-success-text" style={{ marginTop: '12px' }}>
-                    The link will expire in <strong>30 minutes</strong>. Be sure to check your spam folder too.
-                  </p>
-                </div>
-
-                <button
-                  className="fp-resend-btn"
-                  onClick={handleResend}
+            {/* ── Request form ── */}
+            <form onSubmit={handleSubmit} noValidate>
+              <div className="fp-group">
+                <label className="fp-label">
+                  SLIIT Email <span className="req">*</span>
+                </label>
+                <input
+                  className="fp-input"
+                  type="email"
+                  placeholder="it21xxxxxx@my.sliit.lk"
+                  value={email}
+                  onChange={(e) => { 
+                    setEmail(e.target.value); 
+                    setMessage({ text: '', type: '' }); 
+                  }}
+                  onBlur={(e) => {
+                    let inputValue = e.target.value.trim();
+                    
+                    // If input doesn't contain @ and matches IT number pattern, auto-append domain
+                    if (inputValue && !inputValue.includes('@')) {
+                      if (/^it\d+$/i.test(inputValue)) {
+                        inputValue = inputValue + '@my.sliit.lk';
+                        setEmail(inputValue);
+                      }
+                    }
+                  }}
+                  required
                   disabled={loading}
-                >
-                  {loading ? 'Resending…' : '↺ Resend reset link'}
-                </button>
-              </>
-            ) : (
-              /* ── Request form ── */
-              <form onSubmit={handleSubmit} noValidate>
-                <div className="fp-group">
-                  <label className="fp-label">
-                    SLIIT Email <span className="req">*</span>
-                  </label>
-                  <input
-                    className="fp-input"
-                    type="email"
-                    placeholder="it21xxxxxx@my.sliit.lk"
-                    value={email}
-                    onChange={(e) => { setEmail(e.target.value); setMessage({ text: '', type: '' }); }}
-                    required
-                    disabled={loading}
-                  />
-                </div>
+                  autoFocus
+                />
+              </div>
 
-                <button className="fp-btn" type="submit" disabled={loading}>
-                  {loading ? 'Sending…' : 'Send Reset Link →'}
-                </button>
-              </form>
-            )}
+              <button className="fp-btn" type="submit" disabled={loading}>
+                {loading ? 'Sending OTP...' : 'Send OTP Code →'}
+              </button>
+            </form>
 
             <div className="fp-back">
               <span>←</span>

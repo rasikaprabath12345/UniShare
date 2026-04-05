@@ -129,6 +129,97 @@ const styles = `
     box-shadow: 0 0 0 3px rgba(21,101,192,0.10);
   }
 
+  /* ── Input validation states ── */
+  .reg-input.valid {
+    border-color: #22c55e; background: rgba(34, 197, 94, 0.03);
+  }
+  .reg-input.invalid {
+    border-color: var(--rose); background: rgba(212, 83, 126, 0.03);
+  }
+  .reg-input.valid:focus {
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+  }
+  .reg-input.invalid:focus {
+    box-shadow: 0 0 0 3px rgba(212, 83, 126, 0.15);
+  }
+
+  /* ── Validation feedback ── */
+  .reg-feedback {
+    font-size: 0.75rem; margin-top: 4px; display: flex; align-items: center; gap: 4px;
+    line-height: 1.4; min-height: 18px;
+  }
+  .reg-feedback.success {
+    color: #22c55e; font-weight: 500;
+  }
+  .reg-feedback.error {
+    color: var(--rose); font-weight: 500;
+  }
+  .reg-feedback.info {
+    color: var(--blue); font-weight: 500;
+  }
+
+  /* ── Password Strength Indicator ── */
+  .pwd-strength-meter {
+    margin-top: 8px; padding: 10px; background: var(--grey-100);
+    border-radius: 6px; border: 1px solid var(--grey-200);
+  }
+  .pwd-strength-bar {
+    height: 4px; background: var(--grey-200); border-radius: 2px;
+    overflow: hidden; margin-bottom: 8px;
+  }
+  .pwd-strength-fill {
+    height: 100%; width: 0%; transition: width 0.3s ease, background 0.3s ease;
+  }
+  .pwd-strength-fill.weak { background: #ef4444; width: 33%; }
+  .pwd-strength-fill.fair { background: #f59e0b; width: 66%; }
+  .pwd-strength-fill.strong { background: #22c55e; width: 100%; }
+  
+  .pwd-strength-label {
+    font-size: 0.72rem; font-weight: 600;
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 6px; letter-spacing: 0.3px;
+  }
+  .pwd-strength-text {
+    padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 0.72rem;
+    display: inline-block;
+  }
+  .pwd-strength-text.weak { background: rgba(239, 68, 68, 0.15); color: #991b1b; }
+  .pwd-strength-text.fair { background: rgba(245, 158, 11, 0.15); color: #92400e; }
+  .pwd-strength-text.strong { background: rgba(34, 197, 94, 0.15); color: #166534; }
+
+  .pwd-requirements {
+    font-size: 0.72rem; line-height: 1.5; margin-top: 6px;
+  }
+  .pwd-req-item {
+    display: flex; align-items: center; gap: 6px; padding: 3px 0;
+    color: var(--text-sub); transition: color 0.2s;
+  }
+  .pwd-req-item.met { color: #22c55e; font-weight: 500; }
+  .pwd-req-item::before {
+    content: '○'; font-weight: bold; font-size: 0.8rem;
+  }
+  .pwd-req-item.met::before {
+    content: '✓'; color: inherit; font-size: 0.8rem;
+  }
+
+  /* ── Name Requirements ── */
+  .name-requirements {
+    font-size: 0.72rem; line-height: 1.5; margin-top: 6px;
+    padding: 8px; background: var(--grey-100); border-radius: 6px;
+    border: 1px solid var(--grey-200);
+  }
+  .name-req-item {
+    display: flex; align-items: center; gap: 6px; padding: 3px 0;
+    color: var(--text-sub); transition: color 0.2s;
+  }
+  .name-req-item.met { color: #22c55e; font-weight: 500; }
+  .name-req-item::before {
+    content: '○'; font-weight: bold; font-size: 0.8rem;
+  }
+  .name-req-item.met::before {
+    content: '✓'; color: inherit; font-size: 0.8rem;
+  }
+
   /* ── Error alert ── */
   .reg-alert {
     background: var(--rose-pale); border: 1px solid rgba(212,83,126,0.22);
@@ -169,51 +260,307 @@ const styles = `
     .reg-row { grid-template-columns: 1fr; }
     .reg-right { padding: 32px 20px; }
   }
+
+  /* ── Success animation ── */
+  @keyframes fadeInOut {
+    0% { opacity: 0; transform: translateY(-10px); }
+    10% { opacity: 1; transform: translateY(0); }
+    90% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-10px); }
+  }
 `;
 
 export default function Register() {
   const navigate = useNavigate();
 
+  // ─── STEP STATE: Track whether we're on registration form or OTP verification ───
+  const [step, setStep] = useState('form'); // 'form' or 'otp'
+  const [email, setEmail] = useState(''); // Store email for OTP verification
+
+  // ─── REGISTRATION FORM STATE ───
   const [formData, setFormData] = useState({
     fullName: '', email: '', password: '', confirmPassword: '',
     studentId: '', faculty: 'IT', academicYear: 'Year 1', semester: '1',
   });
-  const [error,   setError]   = useState('');
-  const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    setError('');
+  // Track validation state for each field
+  const [validation, setValidation] = useState({
+    fullName: null,
+    studentId: null,
+    email: null,
+    password: null,
+    confirmPassword: null,
+  });
+
+  // ─── OTP VERIFICATION STATE ───
+  const [otp, setOtp] = useState('');
+  const [otpError, setOtpError] = useState('');
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [testOTP, setTestOTP] = useState(''); // For testing when email fails
+
+  // ─── COMMON STATE ───
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+
+  /* ── Validation functions ── */
+  const validateFullName = (name) => {
+    if (!name.trim()) return { valid: false, msg: 'Full name is required' };
+    if (!/^[a-zA-Z\s]+$/.test(name)) return { valid: false, msg: 'Name can only contain letters and spaces' };
+    const words = name.trim().split(/\s+/).filter(w => w.length > 0);
+    if (words.length < 2) return { valid: false, msg: 'Please enter First Name and Last Name (2 words)' };
+    if (words[0].length < 2 || words[1].length < 2) return { valid: false, msg: 'Each name must be at least 2 characters' };
+    return { valid: true, msg: '✓ Name format is correct' };
   };
 
+  /* ── Calculate name requirements status ── */
+  const calculateNameRequirements = (name) => {
+    if (!name) return { 
+      isLettersOnly: false, 
+      hasTwoWords: false, 
+      validLength: false,
+      allMet: false 
+    };
+    
+    return {
+      isLettersOnly: /^[a-zA-Z\s]*$/.test(name),
+      hasTwoWords: name.trim().split(/\s+/).filter(w => w.length > 0).length >= 2,
+      validLength: name.trim().split(/\s+/).every(word => word.length >= 2),
+      allMet: validateFullName(name).valid
+    };
+  };
+
+  const validateStudentId = (id) => {
+    if (!id.trim()) return { valid: false, msg: 'Student ID is required' };
+    const upperID = id.trim().toUpperCase();
+    if (!/^IT\d{8}$/.test(upperID)) 
+      return { valid: false, msg: 'Format must be IT + 8 digits (e.g. IT21000000)' };
+    return { valid: true, msg: '✓ Valid IT number' };
+  };
+
+  const validateEmail = (mail) => {
+    if (!mail.trim()) return { valid: false, msg: 'Email is required' };
+    if (!mail.toLowerCase().endsWith('@my.sliit.lk'))
+      return { valid: false, msg: 'Must use @my.sliit.lk email' };
+    if (!/^[a-zA-Z0-9._]+@my\.sliit\.lk$/.test(mail.toLowerCase()))
+      return { valid: false, msg: 'Invalid email format' };
+    return { valid: true, msg: '✓ Valid SLIIT email' };
+  };
+
+  const validatePassword = (pass) => {
+    if (!pass) return { valid: false, msg: 'Password is required' };
+    if (pass.length < 8) return { valid: false, msg: 'Min. 8 characters required' };
+    if (!/[A-Z]/.test(pass)) return { valid: false, msg: 'Add at least one uppercase letter' };
+    if (!/[0-9]/.test(pass)) return { valid: false, msg: 'Add at least one number' };
+    return { valid: true, msg: '✓ Strong password' };
+  };
+
+  /* ── Calculate password strength (weak/fair/strong) ── */
+  const calculatePasswordStrength = (pass) => {
+    if (!pass) return { strength: null, score: 0 };
+    
+    let score = 0;
+    const checks = {
+      length: pass.length >= 8,
+      uppercase: /[A-Z]/.test(pass),
+      lowercase: /[a-z]/.test(pass),
+      number: /[0-9]/.test(pass),
+      special: /[!@#$%^&*(),.?":{}|<>]/.test(pass),
+    };
+
+    // Score points
+    if (checks.length) score += 2;
+    if (checks.uppercase) score += 1;
+    if (checks.lowercase) score += 1;
+    if (checks.number) score += 1;
+    if (checks.special) score += 1;
+    if (pass.length >= 12) score += 1;
+
+    let strength = 'weak';
+    if (score >= 5) strength = 'strong';
+    else if (score >= 3) strength = 'fair';
+
+    return { strength, score, checks };
+  };
+
+  const validateConfirmPassword = (confirm) => {
+    if (!confirm) return { valid: false, msg: 'Please confirm your password' };
+    if (confirm !== formData.password) return { valid: false, msg: 'Passwords do not match' };
+    return { valid: true, msg: '✓ Passwords match' };
+  };
+
+  const validateOtp = (otpValue) => {
+    if (!otpValue.trim()) return { valid: false, msg: 'OTP is required' };
+    if (!/^\d{6}$/.test(otpValue.trim())) return { valid: false, msg: 'OTP must be 6 digits' };
+    return { valid: true, msg: '' };
+  };
+
+  /* ── Auto-generate email from Student ID ── */
+  const generateEmailFromStudentId = (studentId) => {
+    const upperID = studentId.trim().toUpperCase();
+    if (/^IT\d{8}$/.test(upperID)) {
+      return upperID.toLowerCase() + '@my.sliit.lk';
+    }
+    return '';
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    let newFormData = { ...formData, [name]: value };
+
+    // Auto-generate email from student ID
+    if (name === 'studentId') {
+      const newEmail = generateEmailFromStudentId(value);
+      if (newEmail) {
+        newFormData.email = newEmail;
+      }
+    }
+
+    setFormData(newFormData);
+    setError('');
+
+    // Real-time validation
+    let validationResult = null;
+    if (name === 'fullName') validationResult = validateFullName(value);
+    else if (name === 'studentId') validationResult = validateStudentId(value);
+    else if (name === 'email') validationResult = validateEmail(value);
+    else if (name === 'password') validationResult = validatePassword(value);
+    else if (name === 'confirmPassword') validationResult = validateConfirmPassword(value);
+
+    if (validationResult) {
+      setValidation({ ...validation, [name]: validationResult });
+    }
+  };
+
+  // ─── REGISTRATION FORM SUBMIT ───
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    if (!formData.email.endsWith('@my.sliit.lk'))
-      return setError('Registration is restricted to SLIIT students only. Use your @my.sliit.lk email.');
-    if (formData.password.length < 8)
-      return setError('Password must be at least 8 characters long.');
-    if (formData.password !== formData.confirmPassword)
-      return setError('Passwords do not match. Please re-enter.');
+    // Validate all fields before submit
+    const fullNameVal = validateFullName(formData.fullName);
+    const studentIdVal = validateStudentId(formData.studentId);
+    const emailVal = validateEmail(formData.email);
+    const passwordVal = validatePassword(formData.password);
+    const confirmVal = validateConfirmPassword(formData.confirmPassword);
+
+    setValidation({
+      fullName: fullNameVal,
+      studentId: studentIdVal,
+      email: emailVal,
+      password: passwordVal,
+      confirmPassword: confirmVal,
+    });
+
+    if (!fullNameVal.valid || !studentIdVal.valid || !emailVal.valid || !passwordVal.valid || !confirmVal.valid) {
+      return setError('Please fix the errors above before registering.');
+    }
 
     setLoading(true);
     try {
-      await axios.post('http://localhost:8000/api/users/register', {
-        fullName:     formData.fullName.trim(),
-        email:        formData.email.toLowerCase().trim(),
-        password:     formData.password,
-        studentId:    formData.studentId.trim().toUpperCase(),
-        faculty:      formData.faculty,
+      console.log('📝 Submitting registration form...');
+      
+      const response = await axios.post('http://localhost:8000/User/register', {
+        fullName: formData.fullName.trim(),
+        email: formData.email.toLowerCase().trim(),
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+        studentId: formData.studentId.trim().toUpperCase(),
+        faculty: formData.faculty,
         academicYear: formData.academicYear,
-        semester:     Number(formData.semester),
+        semester: Number(formData.semester),
       });
-      navigate('/login', { state: { registered: true } });
+
+      console.log('✅ Registration successful!', response.data);
+
+      // On successful registration, show OTP verification screen
+      if (response.data.requiresOTP) {
+        console.log('🔐 OTP verification required, showing verification form...');
+        setEmail(formData.email.toLowerCase().trim());
+        if (response.data.testOTP) {
+          console.log('⚠️  Test OTP provided:', response.data.testOTP);
+          setTestOTP(response.data.testOTP);
+          setError('⚠️  Email configuration issue. For testing, use OTP: ' + response.data.testOTP);
+        }
+        setStep('otp');
+        setOtp('');
+        setOtpError('');
+        setLoading(false);
+      }
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
-    } finally {
+      console.error('❌ Registration failed:', err.response?.data || err.message);
+      const errorMsg = err.response?.data?.message || err.message || 'Registration failed. Please try again.';
+      setError(errorMsg);
       setLoading(false);
     }
+  };
+
+  // ─── OTP VERIFICATION SUBMIT ───
+  const handleOtpSubmit = async (e) => {
+    e.preventDefault();
+    setOtpError('');
+
+    const otpValidation = validateOtp(otp);
+    if (!otpValidation.valid) {
+      setOtpError(otpValidation.msg);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      console.log('📧 Verifying OTP...', { email, otp });
+      
+      const response = await axios.post('http://localhost:8000/User/verify-email-otp', {
+        email: email,
+        otp: otp.trim(),
+      });
+
+      console.log('✅ OTP verification successful!', response.data);
+      setShowSuccess(true);
+
+      // Show success message for 2 seconds, then redirect
+      setTimeout(() => {
+        console.log('🔄 Navigating to login page...');
+        navigate('/login', { 
+          state: { 
+            registered: true, 
+            emailVerified: true,
+            message: 'Email verified! You can now log in.'
+          } 
+        });
+      }, 1500);
+      
+    } catch (err) {
+      console.error('❌ OTP verification failed:', err.response?.data || err.message);
+      const errorMsg = err.response?.data?.message || err.message || 'OTP verification failed. Please try again.';
+      setOtpError(errorMsg);
+      setLoading(false);
+    }
+  };
+
+  // ─── RESEND VERIFICATION EMAIL ───
+  const handleResendOtp = async () => {
+    setOtpError('');
+    setResendLoading(true);
+    try {
+      await axios.post('http://localhost:8000/User/resend-verification-email', {
+        email: email,
+      });
+      setOtpError(''); // Clear any errors
+      alert('✅ Verification email sent again! Check your email for the new OTP.');
+    } catch (err) {
+      setOtpError(err.response?.data?.message || 'Failed to resend OTP. Please try again.');
+    } finally {
+      setResendLoading(false);
+    }
+  };
+
+  // ─── HANDLE GO BACK FROM OTP SCREEN ───
+  const handleBackToForm = () => {
+    setStep('form');
+    setEmail('');
+    setOtp('');
+    setOtpError('');
   };
 
   return (
@@ -254,100 +601,355 @@ export default function Register() {
         <div className="reg-right">
           <div className="reg-form-wrap">
 
-            <p className="reg-eyebrow">Get started</p>
-            <h1 className="reg-title">Create Account</h1>
-            <p className="reg-subtitle">
-              SLIIT students only — use your <strong>@my.sliit.lk</strong> email to register
-            </p>
+            {/* ─────────────────────────────────────────── */}
+            {/* REGISTRATION FORM (Step 1) */}
+            {/* ─────────────────────────────────────────── */}
+            {step === 'form' && (
+              <>
+                <p className="reg-eyebrow">Get started</p>
+                <h1 className="reg-title">Create Account</h1>
+                <p className="reg-subtitle">
+                  SLIIT students only — use your <strong>@my.sliit.lk</strong> email to register
+                </p>
 
-            {error && (
-              <div className="reg-alert">
-                <span>⚠</span><span>{error}</span>
-              </div>
+                {error && (
+                  <div className="reg-alert">
+                    <span>⚠</span><span>{error}</span>
+                  </div>
+                )}
+
+                <form onSubmit={handleSubmit} noValidate>
+
+                  {/* ── Personal Info ── */}
+                  <p className="reg-section-label">Personal Info</p>
+
+                  <div className="reg-group">
+                    <label className="reg-label">Full Name <span className="req">*</span></label>
+                    <input 
+                      className={`reg-input ${validation.fullName?.valid ? 'valid' : validation.fullName?.valid === false ? 'invalid' : ''}`}
+                      type="text" name="fullName" value={formData.fullName}
+                      placeholder="e.g. Kavindu Perera" required onChange={handleChange} />
+                    
+                    {/* Name Requirements Checklist */}
+                    {formData.fullName && (
+                      <div className="name-requirements">
+                        <div className={`name-req-item ${calculateNameRequirements(formData.fullName).isLettersOnly ? 'met' : ''}`}>
+                          Letters and spaces only
+                        </div>
+                        <div className={`name-req-item ${calculateNameRequirements(formData.fullName).hasTwoWords ? 'met' : ''}`}>
+                          Two words required (First & Last Name)
+                        </div>
+                        <div className={`name-req-item ${calculateNameRequirements(formData.fullName).validLength ? 'met' : ''}`}>
+                          Each word at least 2 characters
+                        </div>
+                      </div>
+                    )}
+
+                    {validation.fullName && (
+                      <div className={`reg-feedback ${validation.fullName.valid ? 'success' : 'error'}`}>
+                        {validation.fullName.valid ? '✓' : '✕'} {validation.fullName.msg}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="reg-row">
+                    <div className="reg-group">
+                      <label className="reg-label">Student ID (Student Number) <span className="req">*</span></label>
+                      <input 
+                        className={`reg-input ${validation.studentId?.valid ? 'valid' : validation.studentId?.valid === false ? 'invalid' : ''}`}
+                        type="text" name="studentId" value={formData.studentId}
+                        placeholder="IT21000000" required onChange={handleChange} />
+                      {validation.studentId && (
+                        <div className={`reg-feedback ${validation.studentId.valid ? 'success' : 'error'}`}>
+                          {validation.studentId.valid ? '✓' : '✕'} {validation.studentId.msg}
+                        </div>
+                      )}
+                    </div>
+                    <div className="reg-group">
+                      <label className="reg-label">SLIIT Email <span className="req">*</span></label>
+                      <input 
+                        className={`reg-input ${validation.email?.valid ? 'valid' : validation.email?.valid === false ? 'invalid' : ''}`}
+                        type="email" name="email" value={formData.email}
+                        placeholder="it21xxxxxx@my.sliit.lk" required onChange={handleChange}
+                        onBlur={(e) => {
+                          let inputValue = e.target.value.trim();
+                          
+                          // If input doesn't contain @ and matches IT number pattern, auto-append domain
+                          if (inputValue && !inputValue.includes('@')) {
+                            if (/^it\d+$/i.test(inputValue)) {
+                              inputValue = inputValue + '@my.sliit.lk';
+                              const updatedFormData = { ...formData, email: inputValue };
+                              setFormData(updatedFormData);
+                              const validationResult = validateEmail(inputValue);
+                              if (validationResult) {
+                                setValidation(prev => ({ ...prev, email: validationResult }));
+                              }
+                            }
+                          }
+                        }}
+                      />
+                      {validation.email && (
+                        <div className={`reg-feedback ${validation.email.valid ? 'success' : 'error'}`}>
+                          {validation.email.valid ? '✓' : '✕'} {validation.email.msg}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* ── Academic Info ── */}
+                  <p className="reg-section-label">Academic Info</p>
+
+                  <div className="reg-row">
+                    <div className="reg-group">
+                      <label className="reg-label">Faculty <span className="req">*</span></label>
+                      <select className="reg-select" name="faculty" onChange={handleChange}>
+                        <option value="IT">IT</option>
+                        <option value="Engineering">Engineering</option>
+                        <option value="Business">Business</option>
+                        <option value="Computing">Computing</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+                    <div className="reg-group">
+                      <label className="reg-label">Academic Year <span className="req">*</span></label>
+                      <select className="reg-select" name="academicYear" onChange={handleChange}>
+                        <option value="Year 1">Year 1</option>
+                        <option value="Year 2">Year 2</option>
+                        <option value="Year 3">Year 3</option>
+                        <option value="Year 4">Year 4</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="reg-group" style={{ maxWidth: '48%', paddingRight: 0 }}>
+                    <label className="reg-label">Semester <span className="req">*</span></label>
+                    <select className="reg-select" name="semester" onChange={handleChange}>
+                      <option value="1">Semester 1</option>
+                      <option value="2">Semester 2</option>
+                    </select>
+                  </div>
+
+                  {/* ── Security ── */}
+                  <p className="reg-section-label">Security</p>
+
+                  <div className="reg-row">
+                    <div className="reg-group">
+                      <label className="reg-label">Password <span className="req">*</span></label>
+                      <input 
+                        className={`reg-input ${validation.password?.valid ? 'valid' : validation.password?.valid === false ? 'invalid' : ''}`}
+                        type="password" name="password" value={formData.password}
+                        placeholder="Min. 8 characters" required onChange={handleChange} />
+                      
+                      {/* Password Strength Indicator */}
+                      {formData.password && (
+                        <div className="pwd-strength-meter">
+                          <div className="pwd-strength-bar">
+                            <div className={`pwd-strength-fill ${calculatePasswordStrength(formData.password).strength}`}></div>
+                          </div>
+                          <div className="pwd-strength-label">
+                            <span>Password Strength</span>
+                            <span className={`pwd-strength-text ${calculatePasswordStrength(formData.password).strength}`}>
+                              {calculatePasswordStrength(formData.password).strength?.toUpperCase() || 'N/A'}
+                            </span>
+                          </div>
+                          <div className="pwd-requirements">
+                            <div className={`pwd-req-item ${calculatePasswordStrength(formData.password).checks.length ? 'met' : ''}`}>
+                              At least 8 characters
+                            </div>
+                            <div className={`pwd-req-item ${calculatePasswordStrength(formData.password).checks.uppercase ? 'met' : ''}`}>
+                              One uppercase letter (A-Z)
+                            </div>
+                            <div className={`pwd-req-item ${calculatePasswordStrength(formData.password).checks.number ? 'met' : ''}`}>
+                              One number (0-9)
+                            </div>
+                            <div className={`pwd-req-item ${calculatePasswordStrength(formData.password).checks.lowercase ? 'met' : ''}`}>
+                              One lowercase letter (a-z)
+                            </div>
+                            <div className={`pwd-req-item ${calculatePasswordStrength(formData.password).checks.special ? 'met' : ''}`}>
+                              One special character (!@#$%^&*...)
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {validation.password && (
+                        <div className={`reg-feedback ${validation.password.valid ? 'success' : 'error'}`}>
+                          {validation.password.valid ? '✓' : '✕'} {validation.password.msg}
+                        </div>
+                      )}
+                    </div>
+                    <div className="reg-group">
+                      <label className="reg-label">Confirm Password <span className="req">*</span></label>
+                      <input 
+                        className={`reg-input ${validation.confirmPassword?.valid ? 'valid' : validation.confirmPassword?.valid === false ? 'invalid' : ''}`}
+                        type="password" name="confirmPassword" value={formData.confirmPassword}
+                        placeholder="Re-enter password" required onChange={handleChange} />
+                      {validation.confirmPassword && (
+                        <div className={`reg-feedback ${validation.confirmPassword.valid ? 'success' : 'error'}`}>
+                          {validation.confirmPassword.valid ? '✓' : '✕'} {validation.confirmPassword.msg}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <button className="reg-btn" type="submit" disabled={loading}>
+                    {loading ? 'Creating Account…' : 'Create My Account →'}
+                  </button>
+
+                </form>
+
+                <p className="reg-footer">
+                  Already have an account? <Link to="/login">Sign in</Link>
+                </p>
+              </>
             )}
 
-            <form onSubmit={handleSubmit} noValidate>
+            {/* ─────────────────────────────────────────── */}
+            {/* EMAIL VERIFICATION (Step 2) */}
+            {/* ─────────────────────────────────────────── */}
+            {step === 'otp' && (
+              <>
+                <p className="reg-eyebrow">Final Step</p>
+                <h1 className="reg-title">Verify Email</h1>
+                <p className="reg-subtitle">
+                  We've sent a 6-digit code to <strong>{email}</strong>
+                </p>
 
-              {/* ── Personal Info ── */}
-              <p className="reg-section-label">Personal Info</p>
+                {showSuccess && (
+                  <div style={{
+                    background: '#f0fdf4',
+                    border: '1px solid #86efac',
+                    color: '#166534',
+                    borderRadius: '8px',
+                    padding: '14px',
+                    fontSize: '0.85rem',
+                    fontWeight: '500',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    marginBottom: '18px',
+                    animation: 'fadeInOut 1.5s ease-in-out'
+                  }}>
+                    <span>✅</span>
+                    <span>Email verified successfully! Redirecting to login...</span>
+                  </div>
+                )}
 
-              <div className="reg-group">
-                <label className="reg-label">Full Name <span className="req">*</span></label>
-                <input className="reg-input" type="text" name="fullName"
-                  placeholder="e.g. Kavindu Perera" required onChange={handleChange} />
-              </div>
+                {otpError && !showSuccess && (
+                  <div className="reg-alert">
+                    <span>⚠</span><span>{otpError}</span>
+                  </div>
+                )}
 
-              <div className="reg-row">
-                <div className="reg-group">
-                  <label className="reg-label">Student ID <span className="req">*</span></label>
-                  <input className="reg-input" type="text" name="studentId"
-                    placeholder="IT21000000" required onChange={handleChange} />
-                </div>
-                <div className="reg-group">
-                  <label className="reg-label">SLIIT Email <span className="req">*</span></label>
-                  <input className="reg-input" type="email" name="email"
-                    placeholder="it21xxxxxx@my.sliit.lk" required onChange={handleChange} />
-                </div>
-              </div>
+                {testOTP && !showSuccess && (
+                  <div style={{
+                    background: '#fef3c7',
+                    border: '1px solid #fcd34d',
+                    color: '#92400e',
+                    borderRadius: '8px',
+                    padding: '12px 14px',
+                    fontSize: '0.82rem',
+                    fontWeight: '600',
+                    marginBottom: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    justifyContent: 'space-between'
+                  }}>
+                    <span>🔧 Test OTP: <code style={{ fontWeight: '700', fontSize: '0.9rem', letterSpacing: '2px' }}>{testOTP}</code></span>
+                    <button
+                      onClick={() => setOtp(testOTP)}
+                      style={{
+                        background: '#fbbf24',
+                        border: 'none',
+                        color: '#78350f',
+                        padding: '4px 10px',
+                        borderRadius: '4px',
+                        fontSize: '0.75rem',
+                        fontWeight: '600',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Use
+                    </button>
+                  </div>
+                )}
 
-              {/* ── Academic Info ── */}
-              <p className="reg-section-label">Academic Info</p>
+                {!showSuccess && (
+                  <>
+                    <form onSubmit={handleOtpSubmit} noValidate>
 
-              <div className="reg-row">
-                <div className="reg-group">
-                  <label className="reg-label">Faculty <span className="req">*</span></label>
-                  <select className="reg-select" name="faculty" onChange={handleChange}>
-                    <option value="IT">IT</option>
-                    <option value="Engineering">Engineering</option>
-                    <option value="Business">Business</option>
-                    <option value="Computing">Computing</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-                <div className="reg-group">
-                  <label className="reg-label">Academic Year <span className="req">*</span></label>
-                  <select className="reg-select" name="academicYear" onChange={handleChange}>
-                    <option value="Year 1">Year 1</option>
-                    <option value="Year 2">Year 2</option>
-                    <option value="Year 3">Year 3</option>
-                    <option value="Year 4">Year 4</option>
-                  </select>
-                </div>
-              </div>
+                      <div className="reg-group">
+                        <label className="reg-label">Enter OTP Code <span className="req">*</span></label>
+                        <input 
+                          className={`reg-input ${otp && /^\d{6}$/.test(otp) ? 'valid' : ''}`}
+                          type="text" 
+                          inputMode="numeric"
+                          maxLength="6"
+                          value={otp}
+                          placeholder="000000"
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                            setOtp(value);
+                            setOtpError('');
+                          }}
+                          required
+                          disabled={loading}
+                        />
+                        <div className="reg-feedback info" style={{ marginTop: '8px' }}>
+                          ⏱️ OTP expires in 5 minutes
+                        </div>
+                      </div>
 
-              <div className="reg-group" style={{ maxWidth: '48%', paddingRight: 0 }}>
-                <label className="reg-label">Semester <span className="req">*</span></label>
-                <select className="reg-select" name="semester" onChange={handleChange}>
-                  <option value="1">Semester 1</option>
-                  <option value="2">Semester 2</option>
-                </select>
-              </div>
+                      <button className="reg-btn" type="submit" disabled={loading}>
+                        {loading ? 'Verifying…' : 'Verify Email & Complete Registration →'}
+                      </button>
 
-              {/* ── Security ── */}
-              <p className="reg-section-label">Security</p>
+                    </form>
 
-              <div className="reg-row">
-                <div className="reg-group">
-                  <label className="reg-label">Password <span className="req">*</span></label>
-                  <input className="reg-input" type="password" name="password"
-                    placeholder="Min. 8 characters" required onChange={handleChange} />
-                </div>
-                <div className="reg-group">
-                  <label className="reg-label">Confirm Password <span className="req">*</span></label>
-                  <input className="reg-input" type="password" name="confirmPassword"
-                    placeholder="Re-enter password" required onChange={handleChange} />
-                </div>
-              </div>
+                    {/* Resend OTP section */}
+                    <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid var(--grey-200)', textAlign: 'center' }}>
+                      <p style={{ fontSize: '0.83rem', color: 'var(--text-sub)', marginBottom: '12px' }}>
+                        Didn't receive the code?
+                      </p>
+                      <button
+                        onClick={handleResendOtp}
+                        disabled={resendLoading}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--blue)',
+                          fontSize: '0.87rem',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          textDecoration: 'underline',
+                          opacity: resendLoading ? 0.6 : 1,
+                        }}
+                      >
+                        {resendLoading ? 'Sending...' : 'Resend OTP'}
+                      </button>
+                    </div>
 
-              <button className="reg-btn" type="submit" disabled={loading}>
-                {loading ? 'Creating Account…' : 'Create My Account →'}
-              </button>
-
-            </form>
-
-            <p className="reg-footer">
-              Already have an account? <Link to="/login">Sign in</Link>
-            </p>
+                    {/* Back button */}
+                    <p className="reg-footer" style={{ marginTop: '20px' }}>
+                      <button
+                        onClick={handleBackToForm}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--blue)',
+                          fontSize: '0.83rem',
+                          cursor: 'pointer',
+                          textDecoration: 'underline',
+                        }}
+                      >
+                        ← Back to registration
+                      </button>
+                    </p>
+                  </>
+                )}
+              </>
+            )}
 
           </div>
         </div>

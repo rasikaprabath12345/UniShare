@@ -17,6 +17,9 @@ const QuizRouter      = require("./routes/QuizRoute");
 const MaterialRouter  = require("./routes/MaterialRoutes");
 const UserRouter = require('./routes/UserRoutes');
 const ForumRouter = require('./routes/ForumRoute');
+const MeetingRouter = require("./routes/MeetingRoute");
+const BookmarkRouter = require("./routes/BookmarkRoute");
+const ReportRouter = require('./routes/ReportRoute');
 
 
 // Use Routes
@@ -25,7 +28,11 @@ app.use("/quiz",      QuizRouter);
 app.use("/uploads",   express.static("uploads"));
 app.use("/Materials", MaterialRouter);
 app.use("/User", UserRouter);
+app.use("/api/users", UserRouter); // API prefix routes
 app.use("/Forum", ForumRouter);
+app.use("/api/meetings", MeetingRouter);
+app.use("/api/bookmarks", BookmarkRouter);
+app.use("/api/reports", ReportRouter);
 
 
 

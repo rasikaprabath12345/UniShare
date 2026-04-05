@@ -182,6 +182,16 @@ export default function Login() {
     setError('');
   };
 
+  const handleEmailBlur = (e) => {
+    let email = e.target.value.trim();
+    
+    // If email exists but doesn't contain @, auto-append @my.sliit.lk
+    if (email && !email.includes('@')) {
+      email = email + '@my.sliit.lk';
+      setFormData({ ...formData, email });
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -192,20 +202,35 @@ export default function Login() {
         password: formData.password,
       });
 
-      /*
-       * Your backend returns { message, user } — no token.
-       * We store the full user object in localStorage.
-       * Navbar.jsx and ProtectedRoute.jsx both read from localStorage.getItem("user").
-       *
-       * If your backend adds a token later, also store it:
-       *   if (res.data.token) localStorage.setItem("token", res.data.token);
-       */
-      localStorage.setItem("user", JSON.stringify(res.data.user));
+      console.log('════════════════════════════════════');
+      console.log('✓ LOGIN SUCCESSFUL');
+      console.log('════════════════════════════════════');
+      console.log('Response:', res.data);
+      console.log('User Object:', res.data.user);
+      console.log('Email:', res.data.user.email);
+      console.log('Role:', res.data.user.role);
+      console.log('Role Type:', typeof res.data.user.role);
+      console.log('════════════════════════════════════');
 
-      /* Redirect back to where the user came from, or home */
-      navigate(from, { replace: true });
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+      if (res.data.token) {
+        localStorage.setItem("token", res.data.token);
+      }
+      console.log('User and token saved to localStorage');
+
+      const userRole = res.data.user.role;
+      console.log('Checking role:', userRole);
+      
+      if (userRole === 'admin') {
+        console.log('✓ Admin role detected - navigating to /admin');
+        navigate('/admin', { replace: true });
+      } else {
+        console.log('Student role -  navigating to', from);
+        navigate(from, { replace: true });
+      }
 
     } catch (err) {
+      console.error('Login error:', err);
       setError(err.response?.data?.message || 'Invalid email or password. Please try again.');
     } finally {
       setLoading(false);
@@ -284,8 +309,10 @@ export default function Login() {
                   type="email"
                   name="email"
                   placeholder="it21xxxxxx@my.sliit.lk"
+                  value={formData.email}
                   required
                   onChange={handleChange}
+                  onBlur={handleEmailBlur}
                 />
               </div>
 
