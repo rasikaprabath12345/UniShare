@@ -32,121 +32,122 @@ body { font-family: var(--font); background: var(--off-white); }
 .qz-page { min-height: 100vh; background: var(--off-white); }
 
 /* ═══════════════════════════════════════════════════════════════════
-   HERO  ── light theme, matching Library.js
+   HERO  ── Home-page style, left-aligned
 ═══════════════════════════════════════════════════════════════════ */
 .qz-select-hero {
   position: relative;
   overflow: hidden;
-  padding: 60px 50px 72px;
-  text-align: center;
-  min-height: 320px;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 0;
+  height: 520px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  text-align: left;
+  padding: 0 60px;
 }
 
-/* Background image — same as Library hero */
+/* Background image */
 .qz-hero-bg-img {
   position: absolute; inset: 0;
-  background-image: url("../../../public/images/quiz.png");
+  background-image: url("../../../public/images/background3.png");
   background-size: cover;
   background-position: center;
   z-index: 0;
 }
 
-/* Light white wash overlay — identical to .lib-hero-overlay */
+/* Home-page style left-to-right light overlay */
 .qz-hero-overlay {
   position: absolute; inset: 0;
   background: linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, 0.292) 0%,
-    rgba(0, 0, 0, 0.246) 50%,
-    rgba(0, 0, 0, 0.266) 100%
+    90deg,
+    rgba(240, 246, 255, 0.513) 0%,
+    rgba(220, 235, 255, 0) 0%,
+    rgba(200, 220, 255, 0.292) 30%,
+    rgba(234, 242, 253, 0) 70%
   );
   z-index: 1;
 }
 
-/* Orbs hidden — they are invisible on light bg and not needed */
-.qz-hero-bg  { display: none; }
+/* Orbs & grid hidden */
+.qz-hero-bg   { display: none; }
 .qz-hero-grid { display: none; }
 
-/* All hero content sits above overlay */
+/* Hero content — left column */
 .qz-hero-content {
   position: relative; z-index: 2;
   display: flex; flex-direction: column;
-  align-items: center; gap: 0;
+  align-items: flex-start;
+  max-width: 520px;
+  gap: 0;
 }
 
-/* Badge — glassmorphism on light bg */
+/* Badge */
 .qz-hero-badge {
   display: inline-flex; align-items: center; gap: 7px;
   background: rgba(255,255,255,0.78);
   border: 1px solid rgba(21,101,192,0.18);
   border-radius: 30px; padding: 6px 16px;
-  font-size: 0.72rem; font-weight: 600;
+  font-size: 1rem; font-weight: 600;
   color: #0d2257;
   letter-spacing: 0.3px;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
   backdrop-filter: blur(8px);
   box-shadow: 0 2px 10px rgba(21,101,192,0.10);
 }
-.qz-hero-badge svg { color: #1565C0; opacity: 1; }
+.qz-hero-badge svg { color: #1565C0; }
 
-/* Heading — dark navy on light bg */
+/* Heading */
 .qz-select-hero h1 {
-  font-size: 2.5rem; font-weight: 800; color: #013760;
+  font-size: 3rem; font-weight: 800; color: #0d2257;
   margin-bottom: 10px; letter-spacing: -0.3px;
-  text-shadow: none;
-    text-align: center;
-
+  line-height: 1.15; text-shadow: none; text-align: left;
 }
 
 /* Sub-text */
 .qz-select-hero p {
-  font-size: 0.88rem; color: #003258;
-  max-width: 480px; margin: 0 auto;
-  text-shadow: none; line-height: 1.7;  text-align: center;
-
+  font-size: 0.95rem; color: #555;
+  max-width: 440px; margin: 0;
+  text-shadow: none; line-height: 1.6; text-align: left;
 }
 
-/* Hero bio card — same as .lib-hero-bio */
+/* Hero bio card — transparent, left-aligned, no border/glass */
 .qz-hero-bio-card {
   position: relative; z-index: 2;
-  max-width: 540px; width: 100%;
-  background: rgba(255, 252, 252, 0.878);
-  border: 1px solid rgba(68, 68, 68, 0.447);
-  border-radius: 16px;
-  padding: 24px 28px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
   text-align: left;
-  backdrop-filter: blur(10px);
-  margin-bottom: 22px;
-  box-shadow: 0 4px 24px rgba(74, 74, 74, 0.448);
+  backdrop-filter: none;
+  margin-bottom: 0;
+  box-shadow: none;
 }
 
-/* Stats row — glass card on light bg */
+/* Stats row — white pill matching Home hero search bar style */
 .qz-hero-stats {
   display: inline-flex; align-items: center; gap: 0;
-  background: rgba(255, 255, 255, 0.831);
-  border: 1px solid rgba(21,101,192,0.15);
-  border-radius: 14px; padding: 14px 28px;
-  margin-top: 20px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 4px 24px rgba(21,101,192,0.10);
+  background: white;
+  border: 1px solid #dce8ff;
+  border-radius: 30px; padding: 10px 22px;
+  margin-top: 22px;
+  box-shadow: 0 4px 20px rgba(21,101,192,0.15);
 }
 .qz-hero-stat {
   display: flex; flex-direction: column; align-items: center;
-  gap: 2px; padding: 0 20px;
+  gap: 2px; padding: 0 18px;
 }
 .qz-hero-stat span {
-  font-family: var(--mono); font-size: 1.4rem; font-weight: 700;
-  color: #1565C0; line-height: 1;
+  font-family: var(--mono); font-size: 1.25rem; font-weight: 800;
+  color: #0d2257; line-height: 1;
 }
 .qz-hero-stat small {
-  font-size: 0.65rem; color: #8898bb;
+  font-size: 0.63rem; color: #8898bb;
   text-transform: uppercase; letter-spacing: 1px; font-weight: 600;
 }
 .qz-hero-stat-divider {
-  width: 1px; height: 36px;
-  background: rgba(21,101,192,0.15);
+  width: 1px; height: 32px;
+  background: #dce8ff;
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -426,7 +427,7 @@ body { font-family: var(--font); background: var(--off-white); }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   GENERATING PHASE — keep dark (it's a full-screen modal-style view)
+   GENERATING PHASE
 ═══════════════════════════════════════════════════════════════════ */
 .qz-generating {
   min-height: 100vh; position: relative;
@@ -823,9 +824,9 @@ body { font-family: var(--font); background: var(--off-white); }
    RESPONSIVE
 ═══════════════════════════════════════════════════════════════════ */
 @media (max-width: 900px) {
-  .qz-select-hero    { padding: 50px 24px 60px; }
-  .qz-select-hero h1 { font-size: 1.25rem; }
-  .qz-hero-stats     { flex-wrap: wrap; padding: 12px 18px; }
+  .qz-select-hero    { height: auto; padding: 60px 28px; }
+  .qz-select-hero h1 { font-size: 2rem; }
+  .qz-hero-stats     { flex-wrap: wrap; padding: 10px 16px; }
   .qz-select-body    { padding: 24px 16px 120px; }
   .qz-header         { padding: 0 18px; gap: 12px; }
   .qz-header-title   { display: none; }

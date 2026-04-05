@@ -50,7 +50,7 @@ function Home() {
         }
         .hero-bg {
           position: absolute; inset: 0;
-          background-image: url("../images/background.png");
+          background-image: url("../images/background4 .png");
           background-size: cover; background-position: center;
         }
         .hero-overlay {
