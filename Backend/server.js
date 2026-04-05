@@ -18,6 +18,7 @@ const MaterialRouter  = require("./routes/MaterialRoutes");
 const UserRouter = require('./routes/UserRoutes');
 const ForumRouter = require('./routes/ForumRoute');
 const MeetingRouter = require("./routes/MeetingRoute");
+const BookmarkRouter = require("./routes/BookmarkRoute");
 
 
 // Use Routes
@@ -28,6 +29,7 @@ app.use("/Materials", MaterialRouter);
 app.use("/User", UserRouter);
 app.use("/Forum", ForumRouter);
 app.use("/api/meetings", MeetingRouter);
+app.use("/api/bookmarks", BookmarkRouter);
 
 
 

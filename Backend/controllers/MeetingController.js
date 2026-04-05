@@ -1,6 +1,16 @@
 const Meeting = require("../models/meeting");
 const MeetingRegistration = require("../models/meetingRegistration");
 
+const isMicrosoftTeamsMeetingLink = (link) => {
+  try {
+    const parsed = new URL(String(link || "").trim());
+    const host = parsed.hostname.toLowerCase();
+    return host === "teams.microsoft.com" || host.endsWith(".teams.microsoft.com");
+  } catch {
+    return false;
+  }
+};
+
 const createMeeting = async (req, res) => {
   try {
     const {
@@ -30,10 +40,17 @@ const createMeeting = async (req, res) => {
       });
     }
 
+    if (!isMicrosoftTeamsMeetingLink(meetingLink)) {
+      return res.status(400).json({
+        success: false,
+        message: "meetingLink must be a valid Microsoft Teams link",
+      });
+    }
+
     const meeting = await Meeting.create({
       title,
       description,
-      meetingLink,
+      meetingLink: String(meetingLink).trim(),
       ownerId,
       ownerName,
       scheduledAt,
@@ -97,6 +114,20 @@ const getMeetingById = async (req, res) => {
 
 const updateMeeting = async (req, res) => {
   try {
+    if (
+      typeof req.body.meetingLink !== "undefined" &&
+      !isMicrosoftTeamsMeetingLink(req.body.meetingLink)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "meetingLink must be a valid Microsoft Teams link",
+      });
+    }
+
+    if (typeof req.body.meetingLink === "string") {
+      req.body.meetingLink = req.body.meetingLink.trim();
+    }
+
     const meeting = await Meeting.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,

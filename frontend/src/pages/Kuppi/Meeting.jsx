@@ -3,13 +3,15 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
+import BookmarkButton from "../../components/BookmarkButton";
 import {
   Video, Calendar, Clock, BookOpen, Users,
-  Plus, Search, ChevronRight, Wifi, WifiOff, CalendarClock,
-  Pencil, Trash2, X, Check
+  Plus, Search, ChevronRight, Wifi, WifiOff, CalendarClock, Bookmark,
+  Pencil, Trash2, X, Check, Download
 } from "lucide-react";
 
 const API_BASE = "http://localhost:8000/api/meetings";
+const BOOKMARK_API = "http://localhost:8000/api/bookmarks";
 
 const MODULES = [
   "IT1201 — Networking", "IT2105 — Programming", "IT1102 — Database",
@@ -193,7 +195,7 @@ function RegisterModal({ meeting, onClose, onRegistered }) {
       const linkFromApi = response.data?.data?.meetingLink || meeting.meetingLink || "";
       setRegisteredMeetingLink(linkFromApi);
       if (onRegistered) {
-        onRegistered(meeting._id || meeting.id);
+        onRegistered(meeting._id || meeting.id, meeting.title);
       }
       setSubmitted(true);
     } catch (error) {
@@ -259,6 +261,46 @@ function RegisterModal({ meeting, onClose, onRegistered }) {
 }
 
 function RegistrationsModal({ meeting, registrations, onClose }) {
+  const downloadRegistrationsReport = () => {
+    if (!registrations.length) return;
+
+    const escapeCell = (value) => {
+      const cell = String(value ?? "").replace(/"/g, '""');
+      return `"${cell}"`;
+    };
+
+    const rows = [
+      ["Meeting Title", "Module", "Date", "Time", "Full Name", "Email", "Description", "Registered At"],
+      ...registrations.map((user) => [
+        meeting.title || "",
+        meeting.module || "",
+        formatDate(meeting.scheduledAt),
+        formatTime(meeting.scheduledAt),
+        user.fullName || "",
+        user.email || "",
+        user.description || "",
+        user.createdAt ? new Date(user.createdAt).toLocaleString("en-GB") : "",
+      ]),
+    ];
+
+    const csv = `\uFEFF${rows.map((row) => row.map(escapeCell).join(",")).join("\n")}`;
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    const safeTitle = (meeting.title || "kuppi-session")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+
+    link.href = url;
+    link.download = `${safeTitle || "kuppi-session"}-registrations.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="registrations-modal" onClick={(e) => e.stopPropagation()}>
@@ -269,7 +311,17 @@ function RegistrationsModal({ meeting, registrations, onClose }) {
 
         <div className="registrations-meta">
           <p className="registrations-meeting-title">{meeting.title}</p>
-          <span>{registrations.length} registration{registrations.length !== 1 ? "s" : ""}</span>
+          <div className="registrations-actions">
+            <span>{registrations.length} registration{registrations.length !== 1 ? "s" : ""}</span>
+            <button
+              type="button"
+              className="btn-download-report"
+              onClick={downloadRegistrationsReport}
+              disabled={!registrations.length}
+            >
+              <Download size={13} /> Download Report
+            </button>
+          </div>
         </div>
 
         <div className="registrations-list">
@@ -293,7 +345,7 @@ function RegistrationsModal({ meeting, registrations, onClose }) {
 }
 
 // ── Meeting Card ──────────────────────────────────────────────────────────────
-function MeetingCard({ meeting, onRegister, onEdit, onDelete, onViewRegistrations, isMyMeetings }) {
+function MeetingCard({ meeting, onRegister, onEdit, onDelete, onViewRegistrations, isMyMeetings, userId, onBookmarkToggle }) {
   const st = STATUS_CONFIG[meeting.status] || STATUS_CONFIG.scheduled;
   const isEnded = meeting.status === "ended";
 
@@ -334,6 +386,12 @@ function MeetingCard({ meeting, onRegister, onEdit, onDelete, onViewRegistration
             <button className="btn-view-registrations" onClick={() => onViewRegistrations(meeting)}>
               <Users size={13} /> Registrations
             </button>
+            <BookmarkButton
+              sessionId={meeting._id || meeting.id}
+              userId={userId}
+              initialBookmarked={meeting.isBookmarked}
+              onToggle={onBookmarkToggle}
+            />
           </>
         ) : (
           <>
@@ -352,6 +410,12 @@ function MeetingCard({ meeting, onRegister, onEdit, onDelete, onViewRegistration
             {!meeting.isRegistered && isEnded && (
               <button className="btn-ended" disabled>Session Ended</button>
             )}
+            <BookmarkButton
+              sessionId={meeting._id || meeting.id}
+              userId={userId}
+              initialBookmarked={meeting.isBookmarked}
+              onToggle={onBookmarkToggle}
+            />
           </>
         )}
       </div>
@@ -375,6 +439,7 @@ export default function Meetings() {
   const [deleteTarget, setDeleteTarget] = useState(null); // delete modal
   const [registrationsTarget, setRegistrationsTarget] = useState(null); // owner-only registrations modal
   const [registrations, setRegistrations] = useState([]);
+  const [registrationNotice, setRegistrationNotice] = useState("");
 
   useEffect(() => {
     const loadMeetings = async () => {
@@ -385,6 +450,8 @@ export default function Meetings() {
         const items = Array.isArray(meetingsResponse.data?.data) ? meetingsResponse.data.data : [];
 
         let registeredMeetingIds = new Set();
+        let bookmarkedSessionIds = new Set();
+
         if (userId || user?.email) {
           const regsResponse = await axios.get(`${API_BASE}/registrations/user/${userId || "none"}`, {
             params: { email: user?.email || "" },
@@ -393,12 +460,23 @@ export default function Meetings() {
           registeredMeetingIds = new Set(regs.map((r) => String(r.meetingId)));
         }
 
+        if (userId) {
+          const bookmarksResponse = await axios.get(BOOKMARK_API, {
+            headers: { "x-user-id": userId },
+          });
+          const bookmarks = Array.isArray(bookmarksResponse.data?.data)
+            ? bookmarksResponse.data.data
+            : [];
+          bookmarkedSessionIds = new Set(bookmarks.map((b) => String(b.sessionId)));
+        }
+
         setMeetings(
           items.map((m) => {
             const mm = mapMeeting(m, userId);
             return {
               ...mm,
               isRegistered: registeredMeetingIds.has(String(mm._id || mm.id)),
+              isBookmarked: bookmarkedSessionIds.has(String(mm._id || mm.id)),
             };
           })
         );
@@ -469,11 +547,27 @@ export default function Meetings() {
     }
   };
 
-  const handleRegistered = (meetingId) => {
+  const handleRegistered = (meetingId, meetingTitle) => {
     setMeetings((prev) =>
       prev.map((m) =>
         String(m._id || m.id) === String(meetingId)
           ? { ...m, isRegistered: true }
+          : m
+      )
+    );
+    setRegistrationNotice(
+      `You are registered for this Kuppi session${meetingTitle ? `: ${meetingTitle}` : ""}.`
+    );
+    setTimeout(() => {
+      setRegistrationNotice("");
+    }, 6000);
+  };
+
+  const handleBookmarkToggle = (sessionId, isSaved) => {
+    setMeetings((prev) =>
+      prev.map((m) =>
+        String(m._id || m.id) === String(sessionId)
+          ? { ...m, isBookmarked: isSaved }
           : m
       )
     );
@@ -529,6 +623,7 @@ export default function Meetings() {
         }
         .meet-search input { border: none; outline: none; flex: 1; font-family: 'Poppins', sans-serif; font-size: 0.88rem; color: #333; background: transparent; }
         .meet-create-wrap { width: 100%; padding: 18px 40px 0; display: flex; justify-content: flex-end; }
+        .meet-create-actions { display: flex; gap: 10px; }
         .meet-create-btn {
           padding: 9px 20px; background: #1565C0; color: white; border: none; border-radius: 10px;
           font-family: 'Poppins', sans-serif; font-size: 0.82rem; font-weight: 600; cursor: pointer;
@@ -536,7 +631,29 @@ export default function Meetings() {
           box-shadow: 0 3px 14px rgba(21,101,192,0.30); transition: all 0.2s;
         }
         .meet-create-btn:hover { background: #0d47a1; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(21,101,192,0.38); }
+        .meet-saved-btn {
+          padding: 9px 16px; border-radius: 10px;
+          border: 1.5px solid #c5d8f8; background: #e8f0fe; color: #1565C0;
+          font-size: 0.8rem; font-weight: 700; font-family: 'Poppins', sans-serif;
+          display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+          transition: all 0.18s;
+        }
+        .meet-saved-btn:hover { background: #1565C0; border-color: #1565C0; color: white; }
         .meet-section-header { width: 100%; margin: 20px auto 20px; padding: 0 40px; display: flex; align-items: center; gap: 12px; }
+        .meet-notice-wrap {
+          width: 100%;
+          padding: 12px 40px 0;
+        }
+        .meet-notice {
+          background: #e6f9f0;
+          color: #0f6e56;
+          border: 1px solid #bcebdc;
+          border-radius: 10px;
+          padding: 11px 14px;
+          font-size: 0.82rem;
+          font-weight: 600;
+          box-shadow: 0 3px 14px rgba(15,110,86,0.1);
+        }
         .meet-section-label {
           display: inline-block; background: #e8f0fe; color: #1565C0;
           font-size: 0.78rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
@@ -548,6 +665,7 @@ export default function Meetings() {
         @media (max-width: 768px) {
           .meet-hero { padding: 50px 24px 60px; }
           .meet-create-wrap { padding: 16px 20px 0; }
+          .meet-notice-wrap { padding: 12px 20px 0; }
           .meet-section-header { padding: 0 20px; }
           .meetings-grid { grid-template-columns: 1fr; padding: 0 20px 40px; }
         }
@@ -569,6 +687,22 @@ export default function Meetings() {
         .meeting-info-row { display: flex; align-items: center; gap: 14px; font-size: 0.72rem; color: #555; font-weight: 600; }
         .meeting-info-row span { display: flex; align-items: center; }
         .meeting-card-actions { padding: 12px 16px 16px; display: flex; gap: 8px; border-top: 1px solid #f0f4ff; }
+        .bookmark-wrap { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+        .bookmark-btn {
+          width: 100%; padding: 8px; border-radius: 8px;
+          border: 1.5px solid #c5d8f8; background: #f5f8ff; color: #1565C0;
+          font-size: 0.78rem; font-weight: 700; font-family: 'Poppins', sans-serif;
+          display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+          cursor: pointer; transition: all 0.18s;
+        }
+        .bookmark-btn:hover { background: #1565C0; border-color: #1565C0; color: #fff; }
+        .bookmark-btn.saved { background: #1565C0; border-color: #1565C0; color: #fff; }
+        .bookmark-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+        .bookmark-msg {
+          display: block; text-align: center;
+          font-size: 0.68rem; font-weight: 600; color: #4f5d7a;
+          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
         .btn-register-seat {
           flex: 1; padding: 8px; background: #0d2257; color: white; border: none; border-radius: 8px;
           font-family: 'Poppins', sans-serif; font-size: 0.78rem; font-weight: 600; cursor: pointer;
@@ -690,11 +824,29 @@ export default function Meetings() {
           padding: 14px 20px; border-bottom: 1px solid #eef4ff;
           display: flex; align-items: center; justify-content: space-between; gap: 10px;
         }
+        .registrations-actions { display: flex; align-items: center; gap: 8px; }
         .registrations-meeting-title { font-size: 0.86rem; font-weight: 700; color: #0d2257; }
         .registrations-meta span {
           font-size: 0.74rem; font-weight: 700; color: #1565C0;
           background: #e8f0fe; border-radius: 20px; padding: 4px 10px;
         }
+        .btn-download-report {
+          border: 1.5px solid #c5d8f8;
+          background: #f5f8ff;
+          color: #1565C0;
+          border-radius: 9px;
+          font-family: 'Poppins', sans-serif;
+          font-size: 0.74rem;
+          font-weight: 700;
+          padding: 6px 10px;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          transition: all 0.18s;
+        }
+        .btn-download-report:hover { background: #1565C0; border-color: #1565C0; color: #fff; }
+        .btn-download-report:disabled { opacity: 0.55; cursor: not-allowed; }
         .registrations-list { padding: 14px 20px 20px; overflow-y: auto; display: grid; gap: 10px; }
         .registration-item {
           border: 1px solid #e8f0fe; border-radius: 12px; padding: 12px 13px;
@@ -736,10 +888,21 @@ export default function Meetings() {
 
       {/* CREATE BUTTON */}
       <div className="meet-create-wrap">
-        <button className="meet-create-btn" onClick={() => navigate("/Createmeeting")}>
-          <Plus size={15} /> Create Meeting
-        </button>
+        <div className="meet-create-actions">
+          <button className="meet-saved-btn" onClick={() => navigate("/saved-sessions")}>
+            <Bookmark size={14} /> Saved Sessions
+          </button>
+          <button className="meet-create-btn" onClick={() => navigate("/Createmeeting")}>
+            <Plus size={15} /> Create Meeting
+          </button>
+        </div>
       </div>
+
+      {!!registrationNotice && (
+        <div className="meet-notice-wrap">
+          <div className="meet-notice">{registrationNotice}</div>
+        </div>
+      )}
 
       {/* SECTION LABEL */}
       <div className="meet-section-header">
@@ -763,6 +926,8 @@ export default function Meetings() {
             onDelete={setDeleteTarget}
             onViewRegistrations={handleViewRegistrations}
             isMyMeetings={activeTab === 2 && m.isOwner}
+            userId={userId}
+            onBookmarkToggle={handleBookmarkToggle}
           />
         ))}
       </div>

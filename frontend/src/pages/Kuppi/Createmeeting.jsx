@@ -41,6 +41,16 @@ function getLoggedUser() {
   }
 }
 
+function isMicrosoftTeamsMeetingLink(link) {
+  try {
+    const url = new URL(String(link || "").trim());
+    const host = url.hostname.toLowerCase();
+    return host === "teams.microsoft.com" || host.endsWith(".teams.microsoft.com");
+  } catch {
+    return false;
+  }
+}
+
 export default function CreateMeeting() {
   const navigate = useNavigate();
   const currentUser = getLoggedUser();
@@ -71,6 +81,9 @@ export default function CreateMeeting() {
     const e = {};
     if (!form.title.trim())       e.title       = "Title is required.";
     if (!form.meetingLink.trim()) e.meetingLink  = "Meeting link is required.";
+    if (form.meetingLink.trim() && !isMicrosoftTeamsMeetingLink(form.meetingLink)) {
+      e.meetingLink = "Please enter a valid Microsoft Teams meeting link.";
+    }
     if (!form.scheduledAt)        e.scheduledAt  = "Date is required.";
     if (!form.scheduledTime)      e.scheduledTime= "Time is required.";
     if (!form.semester)           e.semester     = "Semester is required.";
@@ -102,7 +115,7 @@ export default function CreateMeeting() {
     const payload = {
       title:       form.title,
       description: form.description,
-      meetingLink: form.meetingLink,
+      meetingLink: form.meetingLink.trim(),
       scheduledAt,
       year:        Number(form.year),
       semester:    Number(form.semester),
@@ -432,7 +445,7 @@ export default function CreateMeeting() {
                     name="meetingLink"
                     value={form.meetingLink}
                     onChange={handle}
-                    placeholder="e.g. https://meet.google.com/abc-defg-hij"
+                    placeholder="e.g. https://teams.microsoft.com/l/meetup-join/..."
                   />
                   {errors.meetingLink && <span className="cm-error">{errors.meetingLink}</span>}
                 </div>
