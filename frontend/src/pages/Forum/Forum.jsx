@@ -76,7 +76,6 @@ function ThreadCard({ thread, onReaction, onDelete, onEdit }) {
   const cfg = CATEGORY_CONFIG[thread.category] || CATEGORY_CONFIG["General"];
   const icon = CATEGORY_ICONS[thread.category] || "💬";
 
-  // Mock user data - replace with actual user context
   const currentUser = {
     id: "user123",
     name: "John Doe",
@@ -93,7 +92,6 @@ function ThreadCard({ thread, onReaction, onDelete, onEdit }) {
 
   const handleReaction = async (e) => {
     e.stopPropagation();
-    console.log("Like button clicked for thread:", thread._id);
     await onReaction(thread._id, currentUser.id, currentUser.name);
   };
 
@@ -115,15 +113,10 @@ function ThreadCard({ thread, onReaction, onDelete, onEdit }) {
       )}
 
       <div className="thread-inner">
-        {/* Avatar */}
-        <div
-          className="thread-avatar"
-          style={{ background: cfg.color }}
-        >
+        <div className="thread-avatar" style={{ background: cfg.color }}>
           {(thread.authorName || "U")[0].toUpperCase()}
         </div>
 
-        {/* Content */}
         <div className="thread-content">
           <div className="thread-top-row">
             <span
@@ -191,22 +184,16 @@ function ThreadCard({ thread, onReaction, onDelete, onEdit }) {
               Read more <ChevronRight size={13} />
             </button>
             <div className="thread-actions-quick">
-              <button 
-                className="thread-quick-btn edit" 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit && onEdit(thread._id);
-                }} 
+              <button
+                className="thread-quick-btn edit"
+                onClick={(e) => { e.stopPropagation(); onEdit && onEdit(thread._id); }}
                 title="Edit discussion"
               >
                 <Edit size={13} />
               </button>
-              <button 
-                className="thread-quick-btn delete" 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete && onDelete(thread._id);
-                }}
+              <button
+                className="thread-quick-btn delete"
+                onClick={(e) => { e.stopPropagation(); onDelete && onDelete(thread._id); }}
                 title="Delete discussion"
               >
                 <Trash2 size={13} />
@@ -262,7 +249,6 @@ function NewPostModal({ onClose, onSubmit }) {
     if (!category || !Object.prototype.hasOwnProperty.call(CATEGORY_CONFIG, category)) {
       nextErrors.category = "Please choose a valid category.";
     }
-
     if (!cleanTitle) {
       nextErrors.title = "Title is required.";
     } else if (cleanTitle.length < TITLE_MIN) {
@@ -270,7 +256,6 @@ function NewPostModal({ onClose, onSubmit }) {
     } else if (cleanTitle.length > TITLE_MAX) {
       nextErrors.title = `Title must be less than ${TITLE_MAX + 1} characters.`;
     }
-
     if (!cleanBody) {
       nextErrors.body = "Description is required.";
     } else if (cleanBody.length < BODY_MIN) {
@@ -278,7 +263,6 @@ function NewPostModal({ onClose, onSubmit }) {
     } else if (cleanBody.length > BODY_MAX) {
       nextErrors.body = `Description must be less than ${BODY_MAX + 1} characters.`;
     }
-
     if (parsedTags.length > MAX_TAGS) {
       nextErrors.tags = `Add up to ${MAX_TAGS} tags only.`;
     } else if (invalidTag) {
@@ -294,7 +278,6 @@ function NewPostModal({ onClose, onSubmit }) {
         .join(", ");
       nextErrors.tags = `Invalid tags: ${invalidDetails}`;
     }
-
     return { nextErrors, parsedTags, cleanTitle, cleanBody };
   };
 
@@ -306,12 +289,7 @@ function NewPostModal({ onClose, onSubmit }) {
 
     setSubmitting(true);
     try {
-      await onSubmit({
-        title: cleanTitle,
-        body: cleanBody,
-        category,
-        tags: parsedTags,
-      });
+      await onSubmit({ title: cleanTitle, body: cleanBody, category, tags: parsedTags });
       onClose();
     } catch (err) {
       setSubmitError("Could not post discussion. Please try again.");
@@ -333,11 +311,7 @@ function NewPostModal({ onClose, onSubmit }) {
           <select
             className={`form-select${errors.category ? " form-field-error" : ""}`}
             value={category}
-            onChange={e => {
-              setCategory(e.target.value);
-              if (errors.category) setErrors((prev) => ({ ...prev, category: "" }));
-            }}
-            aria-invalid={Boolean(errors.category)}
+            onChange={e => { setCategory(e.target.value); if (errors.category) setErrors((prev) => ({ ...prev, category: "" })); }}
           >
             {Object.keys(CATEGORY_CONFIG).map(c => (
               <option key={c} value={c}>{CATEGORY_ICONS[c]} {c}</option>
@@ -351,12 +325,8 @@ function NewPostModal({ onClose, onSubmit }) {
             type="text"
             placeholder="What's your question or topic?"
             value={title}
-            onChange={e => {
-              setTitle(e.target.value);
-              if (errors.title) setErrors((prev) => ({ ...prev, title: "" }));
-            }}
+            onChange={e => { setTitle(e.target.value); if (errors.title) setErrors((prev) => ({ ...prev, title: "" })); }}
             maxLength={TITLE_MAX}
-            aria-invalid={Boolean(errors.title)}
           />
           <div className="form-meta-row">
             {errors.title ? <div className="form-error-text">{errors.title}</div> : <span />}
@@ -368,13 +338,9 @@ function NewPostModal({ onClose, onSubmit }) {
             className={`form-textarea${errors.body ? " form-field-error" : ""}`}
             placeholder="Describe your question in detail…"
             value={body}
-            onChange={e => {
-              setBody(e.target.value);
-              if (errors.body) setErrors((prev) => ({ ...prev, body: "" }));
-            }}
+            onChange={e => { setBody(e.target.value); if (errors.body) setErrors((prev) => ({ ...prev, body: "" })); }}
             rows={5}
             maxLength={BODY_MAX}
-            aria-invalid={Boolean(errors.body)}
           />
           <div className="form-meta-row">
             {errors.body ? <div className="form-error-text">{errors.body}</div> : <span />}
@@ -387,11 +353,7 @@ function NewPostModal({ onClose, onSubmit }) {
             type="text"
             placeholder="e.g. SQL, joins, indexing"
             value={tags}
-            onChange={e => {
-              setTags(e.target.value);
-              if (errors.tags) setErrors((prev) => ({ ...prev, tags: "" }));
-            }}
-            aria-invalid={Boolean(errors.tags)}
+            onChange={e => { setTags(e.target.value); if (errors.tags) setErrors((prev) => ({ ...prev, tags: "" })); }}
           />
           {errors.tags && <div className="form-error-text">{errors.tags}</div>}
           {submitError && <div className="form-submit-error">{submitError}</div>}
@@ -399,11 +361,7 @@ function NewPostModal({ onClose, onSubmit }) {
 
         <div className="modal-footer">
           <button className="btn-cancel" onClick={onClose}>Cancel</button>
-          <button
-            className="btn-post"
-            onClick={handleSubmit}
-            disabled={submitting}
-          >
+          <button className="btn-post" onClick={handleSubmit} disabled={submitting}>
             {submitting ? "Posting…" : "Post discussion"}
           </button>
         </div>
@@ -460,39 +418,22 @@ export default function Forum() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(postData),
     });
-
-    if (!res.ok) {
-      throw new Error("Failed to create discussion");
-    }
-
+    if (!res.ok) throw new Error("Failed to create discussion");
     fetchThreads(query, activeCategory, activeSort);
   };
 
   const handleReaction = async (threadId, userId, userName) => {
     try {
-      console.log("Sending reaction:", { threadId, userId, userName });
-
       const res = await fetch(`http://localhost:8000/forum/${threadId}/reaction`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId,
-          userName,
-          type: "like",
-        }),
+        body: JSON.stringify({ userId, userName, type: "like" }),
       });
-
       const data = await res.json();
-      console.log("Reaction response:", data);
-
       if (data.success) {
-        // Update the thread in the local state
         setThreads(prevThreads =>
           prevThreads.map(t => t._id === threadId ? data.data : t)
         );
-        console.log("Thread updated successfully");
-      } else {
-        console.error("Reaction failed:", data.message);
       }
     } catch (err) {
       console.error("Failed to add reaction:", err);
@@ -500,13 +441,9 @@ export default function Forum() {
   };
 
   const handleDelete = async (threadId) => {
-    if (!window.confirm("Are you sure you want to delete this discussion? This action cannot be undone.")) {
-      return;
-    }
+    if (!window.confirm("Are you sure you want to delete this discussion? This action cannot be undone.")) return;
     try {
-      const res = await fetch(`http://localhost:8000/forum/${threadId}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(`http://localhost:8000/forum/${threadId}`, { method: "DELETE" });
       const data = await res.json();
       if (data.success) {
         setThreads(prevThreads => prevThreads.filter(t => t._id !== threadId));
@@ -536,35 +473,36 @@ export default function Forum() {
         />
       )}
 
-      {/* ── HERO (mirrors lib-hero) ── */}
+      {/* ══ HERO — left-aligned like Home page ══ */}
       <section className="forum-hero">
         <div className="forum-hero-bg" />
         <div className="forum-hero-overlay" />
 
-        <div className="lib-tabs">
-          {TABS.map((tab, i) => (
-            <button
-              key={tab.label}
-              className={`lib-tab${activeTab === i ? " active" : ""}`}
-              onClick={() => setActiveTab(i)}
-            >
-              {tab.icon} {tab.label}
-            </button>
-          ))}
-        </div>
+        <div className="forum-hero-content">
+          {/* Tabs */}
+          <div className="forum-tabs">
+            {TABS.map((tab, i) => (
+              <button
+                key={tab.label}
+                className={`forum-tab${activeTab === i ? " active" : ""}`}
+                onClick={() => setActiveTab(i)}
+              >
+                {tab.icon} {tab.label}
+              </button>
+            ))}
+          </div>
 
-        <div className="lib-hero-bio">
-          <h2 className="lib-hero-bio-heading">Ask. Discuss. Grow.</h2>
-          <p className="lib-hero-bio-text">
+          {/* Headline */}
+          <h1 className="forum-hero-heading">Ask. Discuss. Grow.</h1>
+          <p className="forum-hero-sub">
             Got a question that's been bugging you? Start a thread and tap into the
             collective knowledge of your peers. Every answer you give helps someone
             else clear their path — and builds yours.
           </p>
-        </div>
 
-        <div className="lib-search-wrap">
-          <div className="lib-search">
-            <Search size={17} style={{ marginRight: 10, color: "#888" }} />
+          {/* Search bar */}
+          <div className="forum-hero-search">
+            <Search size={17} className="forum-search-icon" />
             <input
               type="text"
               placeholder="Search discussions, topics, questions…"
@@ -575,18 +513,14 @@ export default function Forum() {
         </div>
       </section>
 
-      {/* ── NEW THREAD BUTTON ── */}
-      <div className="lib-upload-wrap">
-        <button className="lib-upload-btn" onClick={() => setShowModal(true)}>
-          <Plus size={15} />
-          New Discussion
-        </button>
-      </div>
-
-      {/* ── SECTION LABEL ── */}
+      {/* ── SECTION LABEL with New Discussion button ── */}
       <div className="lib-section-header">
         <span className="lib-section-label">Community Discussions</span>
         <div className="lib-section-line" />
+        <button className="forum-new-btn" onClick={() => setShowModal(true)}>
+          <Plus size={15} />
+          New Discussion
+        </button>
       </div>
 
       {/* ── LAYOUT: sidebar + feed ── */}
@@ -612,7 +546,7 @@ export default function Forum() {
           </div>
 
           <div className="sidebar-block" style={{ marginTop: "1.25rem" }}>
-            <div class="sidebar-title">Sort by</div>
+            <div className="sidebar-title">Sort by</div>
             <div className="sort-list">
               {SORT_OPTIONS.map(opt => (
                 <button

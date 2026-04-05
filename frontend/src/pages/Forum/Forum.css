@@ -1,45 +1,185 @@
-/* ── Forum.css — mirrors Library.css design language ────────────────────────── */
+/* ── Forum.css — mirrors Home page hero design language ─────────────────────── */
 
-/* ── Hero (matches lib-hero) ─────────────────────────────────────────────────── */
+/* ── Hero — left-aligned like the Home page ──────────────────────────────────── */
 .forum-hero {
   position: relative;
-  min-height: 320px;
+  height: 520px;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 2.5rem 1.5rem 3.5rem;
   overflow: hidden;
-  gap: 1.25rem;
 }
 
 .forum-hero-bg {
   position: absolute;
   inset: 0;
-  background-image: linear-gradient(
-      135deg,
-      rgba(108, 116, 138, 0.78) 0%,
-      rgba(66, 71, 78, 0.62) 45%,
-      rgba(61, 40, 40, 0.52) 100%
-    ),
-    url("../../assets/images/ForumBG.jpg");
+  background-image: url("../../assets/images/backgroundForum.png");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
   z-index: 0;
 }
 
+/* Light gradient overlay on left — exactly mirrors Home page hero-overlay */
 .forum-hero-overlay {
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at 60% 40%, rgba(55, 138, 221, 0.18) 0%, transparent 60%),
-              radial-gradient(ellipse at 20% 80%, rgba(29, 158, 117, 0.15) 0%, transparent 50%);
+  background: linear-gradient(
+    90deg,
+    rgba(240, 246, 255, 0) 0%,
+    rgba(220, 235, 255, 0) 0%,
+    rgba(200, 220, 255, 0.097) 30%,
+    rgba(180, 210, 255, 0.00) 70%
+  );
   z-index: 1;
 }
 
-/* Reuse lib-tabs, lib-tab, lib-hero-bio, lib-search-wrap, lib-search,
-   lib-upload-wrap, lib-upload-btn, lib-section-header, lib-section-label,
-   lib-section-line, lib-empty from Library.css — no duplication needed. */
+/* Left-aligned content block — mirrors .hero-content from Home */
+.forum-hero-content {
+  position: relative;
+  z-index: 2;
+  padding: 0 60px;
+  max-width: 580px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Tabs — pill style ───────────────────────────────────────────────────────── */
+.forum-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.forum-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 18px;
+  border-radius: 30px;
+  border: 1.5px solid rgba(21, 101, 192, 0.25);
+  background: rgba(255, 255, 255, 0.80);
+  color: #4a5568;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s, color 0.18s, box-shadow 0.18s;
+  backdrop-filter: blur(4px);
+}
+
+.forum-tab:hover {
+  background: white;
+  border-color: rgba(21, 101, 192, 0.40);
+  color: #1565C0;
+}
+
+.forum-tab.active {
+  background: #1565C0;
+  border-color: #1565C0;
+  color: white;
+  box-shadow: 0 4px 14px rgba(21, 101, 192, 0.30);
+}
+
+/* ── Hero heading ────────────────────────────────────────────────────────────── */
+.forum-hero-heading {
+  font-size: 3rem;
+  font-weight: 800;
+  color: #0d2257;
+  line-height: 1.15;
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+}
+
+.forum-hero-sub {
+  font-size: 0.95rem;
+  color: #555;
+  line-height: 1.6;
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  max-width: 480px;
+}
+
+/* ── Hero search bar — mirrors Home page .hero-search ───────────────────────── */
+.forum-hero-search {
+  display: flex;
+  align-items: center;
+  background: white;
+  border-radius: 30px;
+  padding: 11px 20px;
+  box-shadow: 0 4px 20px rgba(21, 101, 192, 0.15);
+  max-width: 420px;
+  gap: 10px;
+}
+
+.forum-search-icon {
+  color: #888;
+  flex-shrink: 0;
+}
+
+.forum-hero-search input {
+  border: none;
+  outline: none;
+  flex: 1;
+  background: transparent;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.forum-hero-search input::placeholder {
+  color: #aaa;
+}
+
+/* ── New Discussion button — inline in section header ────────────────────────── */
+.forum-new-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 20px;
+  background: linear-gradient(135deg, #0d2257, #1565C0);
+  color: white;
+  border: none;
+  border-radius: 30px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(21, 101, 192, 0.35);
+  transition: transform 0.16s, box-shadow 0.16s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.forum-new-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(21, 101, 192, 0.45);
+}
+
+/* ── Section header label ────────────────────────────────────────────────────── */
+.lib-section-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 28px 50px 16px;
+}
+
+.lib-section-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #1565C0;
+  white-space: nowrap;
+  font-family: 'Poppins', sans-serif;
+}
+
+.lib-section-line {
+  flex: 1;
+  height: 1px;
+  background: #e0e7f5;
+}
 
 /* ── Forum layout ────────────────────────────────────────────────────────────── */
 .forum-layout {
@@ -55,6 +195,22 @@
   .forum-layout {
     grid-template-columns: 1fr;
   }
+  .forum-hero-content {
+    padding: 0 24px;
+    max-width: 100%;
+  }
+  .forum-hero-heading {
+    font-size: 2rem;
+  }
+  .lib-section-header {
+    padding: 20px 24px 12px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .forum-new-btn {
+    padding: 8px 16px;
+    font-size: 0.82rem;
+  }
 }
 
 /* ── Sidebar ─────────────────────────────────────────────────────────────────── */
@@ -66,7 +222,7 @@
   background: #fff;
   border: 0.5px solid #e5e7eb;
   border-radius: 14px;
-  padding: 1rem 1rem;
+  padding: 1rem;
 }
 
 .sidebar-title {
@@ -78,6 +234,7 @@
   margin-bottom: 0.75rem;
   display: flex;
   align-items: center;
+  font-family: 'Poppins', sans-serif;
 }
 
 .cat-pill-list {
@@ -100,6 +257,7 @@
   transition: background 0.15s, border-color 0.15s;
   text-align: left;
   width: 100%;
+  font-family: 'Poppins', sans-serif;
 }
 
 .cat-pill:hover {
@@ -143,6 +301,7 @@
   transition: background 0.15s;
   text-align: left;
   width: 100%;
+  font-family: 'Poppins', sans-serif;
 }
 
 .sort-btn:hover {
@@ -163,6 +322,16 @@
   gap: 10px;
   padding-top: 0.25rem;
 }
+
+/* Empty state */
+.lib-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #9ca3af;
+}
+.lib-empty-icon { font-size: 2.5rem; margin-bottom: 12px; }
+.lib-empty-text { font-size: 1rem; font-weight: 600; color: #374151; margin-bottom: 6px; font-family: 'Poppins', sans-serif; }
+.lib-empty-sub  { font-size: 0.88rem; color: #9ca3af; font-family: 'Poppins', sans-serif; }
 
 /* ── Thread card ─────────────────────────────────────────────────────────────── */
 .thread-card {
@@ -193,6 +362,7 @@
   align-items: center;
   gap: 5px;
   border-bottom: 0.5px solid #fde68a;
+  font-family: 'Poppins', sans-serif;
 }
 
 .thread-inner {
@@ -213,6 +383,7 @@
   font-weight: 600;
   flex-shrink: 0;
   margin-top: 2px;
+  font-family: 'Poppins', sans-serif;
 }
 
 .thread-content {
@@ -236,6 +407,7 @@
   border: 0.5px solid transparent;
   display: inline-flex;
   align-items: center;
+  font-family: 'Poppins', sans-serif;
 }
 
 .thread-tag {
@@ -246,6 +418,7 @@
   padding: 2px 8px;
   display: inline-flex;
   align-items: center;
+  font-family: 'Poppins', sans-serif;
 }
 
 .thread-time {
@@ -254,6 +427,7 @@
   margin-left: auto;
   display: flex;
   align-items: center;
+  font-family: 'Poppins', sans-serif;
 }
 
 .thread-title {
@@ -265,6 +439,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-family: 'Poppins', sans-serif;
 }
 
 .thread-excerpt {
@@ -276,6 +451,7 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
   margin-bottom: 10px;
+  font-family: 'Poppins', sans-serif;
 }
 
 .thread-footer {
@@ -295,6 +471,7 @@
   font-size: 12px;
   font-weight: 500;
   color: #374151;
+  font-family: 'Poppins', sans-serif;
 }
 
 .author-year {
@@ -303,6 +480,7 @@
   background: #f3f4f6;
   border-radius: 20px;
   padding: 1px 7px;
+  font-family: 'Poppins', sans-serif;
 }
 
 .thread-stats {
@@ -318,6 +496,7 @@
   gap: 4px;
   font-size: 12px;
   color: #9ca3af;
+  font-family: 'Poppins', sans-serif;
 }
 
 .stat-btn {
@@ -327,6 +506,7 @@
   transition: color 0.2s, transform 0.15s;
   padding: 4px 8px;
   border-radius: 6px;
+  font-family: 'Poppins', sans-serif;
 }
 
 .stat-btn:hover {
@@ -356,6 +536,7 @@
   cursor: pointer;
   transition: background 0.15s;
   white-space: nowrap;
+  font-family: 'Poppins', sans-serif;
 }
 
 .btn-thread-view:hover {
@@ -363,7 +544,6 @@
 }
 
 /* ── Thread Quick Actions ─────────────────────────────────────────────────────── */
-
 .thread-actions-quick {
   display: flex;
   gap: 6px;
@@ -472,6 +652,7 @@
   font-weight: 600;
   color: #111827;
   margin: 0;
+  font-family: 'Poppins', sans-serif;
 }
 
 .modal-close {
@@ -501,6 +682,7 @@
   letter-spacing: 0.05em;
   margin-bottom: 5px;
   display: block;
+  font-family: 'Poppins', sans-serif;
 }
 
 .form-hint {
@@ -522,6 +704,7 @@
   outline: none;
   transition: border-color 0.15s;
   box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
 }
 
 .form-select:focus,
@@ -540,7 +723,7 @@
   background: #fff;
   outline: none;
   resize: vertical;
-  font-family: inherit;
+  font-family: 'Poppins', sans-serif;
   transition: border-color 0.15s;
   box-sizing: border-box;
 }
@@ -550,14 +733,8 @@
   box-shadow: 0 0 0 3px rgba(55, 138, 221, 0.1);
 }
 
-.form-field-error {
-  border-color: #e11d48;
-}
-
-.form-field-error:focus {
-  border-color: #e11d48;
-  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.12);
-}
+.form-field-error { border-color: #e11d48; }
+.form-field-error:focus { border-color: #e11d48; box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.12); }
 
 .form-meta-row {
   display: flex;
@@ -571,12 +748,14 @@
   font-size: 12px;
   color: #be123c;
   margin-top: 4px;
+  font-family: 'Poppins', sans-serif;
 }
 
 .form-counter {
   font-size: 11px;
   color: #9ca3af;
   margin-top: 4px;
+  font-family: 'Poppins', sans-serif;
 }
 
 .form-submit-error {
@@ -587,6 +766,7 @@
   border: 0.5px solid #fecdd3;
   border-radius: 8px;
   padding: 7px 10px;
+  font-family: 'Poppins', sans-serif;
 }
 
 .modal-footer {
@@ -608,6 +788,7 @@
   font-size: 14px;
   cursor: pointer;
   transition: background 0.15s;
+  font-family: 'Poppins', sans-serif;
 }
 
 .btn-cancel:hover { background: #f3f4f6; }
@@ -622,6 +803,7 @@
   font-weight: 500;
   cursor: pointer;
   transition: opacity 0.15s, transform 0.15s;
+  font-family: 'Poppins', sans-serif;
 }
 
 .btn-post:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
