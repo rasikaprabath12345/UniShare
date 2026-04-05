@@ -9,6 +9,7 @@ import Library           from "./pages/Library/Library";
 import Kuppi             from "./pages/Kuppi/Meeting";
 import Meeting           from "./pages/Kuppi/Meeting";
 import Createmeeting     from "./pages/Kuppi/Createmeeting";
+import SavedSessions     from "./pages/Kuppi/SavedSessions";
 import UploadNotes       from "./pages/Library/UploadPdf";
 import Feedback          from "./pages/Feedback/Feedback";
 import Forum             from "./pages/Forum/Forum";
@@ -86,6 +87,9 @@ function App() {
         } />
         <Route path="/Createmeeting" element={
           <ProtectedRoute><Createmeeting /></ProtectedRoute>
+        } />
+        <Route path="/saved-sessions" element={
+          <ProtectedRoute><SavedSessions /></ProtectedRoute>
         } />
 
         {/* Community */}
