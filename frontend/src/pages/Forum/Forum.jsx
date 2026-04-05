@@ -16,6 +16,8 @@ import {
   Star,
   TrendingUp,
   Filter,
+  Edit,
+  Trash2,
 } from "lucide-react";
 import "./Forum.css";
 
@@ -70,9 +72,15 @@ function SkeletonThread() {
 }
 
 // ── Thread card ───────────────────────────────────────────────────────────────
-function ThreadCard({ thread }) {
+function ThreadCard({ thread, onReaction, onDelete, onEdit }) {
   const cfg = CATEGORY_CONFIG[thread.category] || CATEGORY_CONFIG["General"];
   const icon = CATEGORY_ICONS[thread.category] || "💬";
+
+  // Mock user data - replace with actual user context
+  const currentUser = {
+    id: "user123",
+    name: "John Doe",
+  };
 
   const timeAgo = (dateStr) => {
     const diff = Date.now() - new Date(dateStr).getTime();
@@ -82,6 +90,21 @@ function ThreadCard({ thread }) {
     if (h < 24) return `${h}h ago`;
     return `${Math.floor(h / 24)}d ago`;
   };
+
+  const handleReaction = async (e) => {
+    e.stopPropagation();
+    console.log("Like button clicked for thread:", thread._id);
+    await onReaction(thread._id, currentUser.id, currentUser.name);
+  };
+
+  const handleCommentClick = (e) => {
+    e.stopPropagation();
+    window.location.href = `/forum/${thread._id}#comments`;
+  };
+
+  const userHasReacted = thread.reactions?.some(r => r.userId === currentUser.id) || false;
+  const likesCount = thread.reactions?.length || thread.likes || 0;
+  const repliesCount = thread.comments?.length || thread.replies || 0;
 
   return (
     <div className={`thread-card${thread.pinned ? " thread-pinned" : ""}`}>
@@ -139,14 +162,22 @@ function ThreadCard({ thread }) {
             </div>
 
             <div className="thread-stats">
-              <span className="stat">
+              <button
+                className={`stat stat-btn${userHasReacted ? " active" : ""}`}
+                onClick={handleReaction}
+                title="Like this discussion"
+              >
                 <ThumbsUp size={12} />
-                {thread.likes ?? 0}
-              </span>
-              <span className="stat">
+                {likesCount}
+              </button>
+              <button
+                className="stat stat-btn"
+                onClick={handleCommentClick}
+                title="View comments"
+              >
                 <MessageSquare size={12} />
-                {thread.replies ?? 0}
-              </span>
+                {repliesCount}
+              </button>
               <span className="stat">
                 <Eye size={12} />
                 {thread.views ?? 0}
@@ -159,6 +190,28 @@ function ThreadCard({ thread }) {
             >
               Read more <ChevronRight size={13} />
             </button>
+            <div className="thread-actions-quick">
+              <button 
+                className="thread-quick-btn edit" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit && onEdit(thread._id);
+                }} 
+                title="Edit discussion"
+              >
+                <Edit size={13} />
+              </button>
+              <button 
+                className="thread-quick-btn delete" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete && onDelete(thread._id);
+                }}
+                title="Delete discussion"
+              >
+                <Trash2 size={13} />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -190,13 +243,78 @@ function NewPostModal({ onClose, onSubmit }) {
   const [category, setCategory] = useState("General");
   const [tags, setTags]         = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [submitError, setSubmitError] = useState("");
+
+  const TITLE_MIN = 8;
+  const TITLE_MAX = 120;
+  const BODY_MIN = 20;
+  const BODY_MAX = 1000;
+  const MAX_TAGS = 6;
+
+  const validate = () => {
+    const nextErrors = {};
+    const cleanTitle = title.trim();
+    const cleanBody = body.trim();
+    const parsedTags = tags.split(",").map((t) => t.trim()).filter(Boolean);
+    const invalidTag = parsedTags.find((t) => t.length < 2 || t.length > 20 || /\d/.test(t));
+
+    if (!category || !Object.prototype.hasOwnProperty.call(CATEGORY_CONFIG, category)) {
+      nextErrors.category = "Please choose a valid category.";
+    }
+
+    if (!cleanTitle) {
+      nextErrors.title = "Title is required.";
+    } else if (cleanTitle.length < TITLE_MIN) {
+      nextErrors.title = `Title must be at least ${TITLE_MIN} characters.`;
+    } else if (cleanTitle.length > TITLE_MAX) {
+      nextErrors.title = `Title must be less than ${TITLE_MAX + 1} characters.`;
+    }
+
+    if (!cleanBody) {
+      nextErrors.body = "Description is required.";
+    } else if (cleanBody.length < BODY_MIN) {
+      nextErrors.body = `Description must be at least ${BODY_MIN} characters.`;
+    } else if (cleanBody.length > BODY_MAX) {
+      nextErrors.body = `Description must be less than ${BODY_MAX + 1} characters.`;
+    }
+
+    if (parsedTags.length > MAX_TAGS) {
+      nextErrors.tags = `Add up to ${MAX_TAGS} tags only.`;
+    } else if (invalidTag) {
+      const invalidDetails = parsedTags
+        .map((t) => {
+          const issues = [];
+          if (t.length < 2) issues.push("at least 2 characters");
+          if (t.length > 20) issues.push("max 20 characters");
+          if (/\d/.test(t)) issues.push("no numbers");
+          return issues.length > 0 ? `'${t}' (${issues.join(", ")})` : null;
+        })
+        .filter(Boolean)
+        .join(", ");
+      nextErrors.tags = `Invalid tags: ${invalidDetails}`;
+    }
+
+    return { nextErrors, parsedTags, cleanTitle, cleanBody };
+  };
 
   const handleSubmit = async () => {
-    if (!title.trim() || !body.trim()) return;
+    const { nextErrors, parsedTags, cleanTitle, cleanBody } = validate();
+    setErrors(nextErrors);
+    setSubmitError("");
+    if (Object.keys(nextErrors).length > 0) return;
+
     setSubmitting(true);
     try {
-      await onSubmit({ title, body, category, tags: tags.split(",").map(t => t.trim()).filter(Boolean) });
+      await onSubmit({
+        title: cleanTitle,
+        body: cleanBody,
+        category,
+        tags: parsedTags,
+      });
       onClose();
+    } catch (err) {
+      setSubmitError("Could not post discussion. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -212,38 +330,71 @@ function NewPostModal({ onClose, onSubmit }) {
 
         <div className="modal-body">
           <label className="form-label">Category</label>
-          <select className="form-select" value={category} onChange={e => setCategory(e.target.value)}>
+          <select
+            className={`form-select${errors.category ? " form-field-error" : ""}`}
+            value={category}
+            onChange={e => {
+              setCategory(e.target.value);
+              if (errors.category) setErrors((prev) => ({ ...prev, category: "" }));
+            }}
+            aria-invalid={Boolean(errors.category)}
+          >
             {Object.keys(CATEGORY_CONFIG).map(c => (
               <option key={c} value={c}>{CATEGORY_ICONS[c]} {c}</option>
             ))}
           </select>
+          {errors.category && <div className="form-error-text">{errors.category}</div>}
 
           <label className="form-label" style={{ marginTop: "1rem" }}>Title</label>
           <input
-            className="form-input"
+            className={`form-input${errors.title ? " form-field-error" : ""}`}
             type="text"
             placeholder="What's your question or topic?"
             value={title}
-            onChange={e => setTitle(e.target.value)}
+            onChange={e => {
+              setTitle(e.target.value);
+              if (errors.title) setErrors((prev) => ({ ...prev, title: "" }));
+            }}
+            maxLength={TITLE_MAX}
+            aria-invalid={Boolean(errors.title)}
           />
+          <div className="form-meta-row">
+            {errors.title ? <div className="form-error-text">{errors.title}</div> : <span />}
+            <span className="form-counter">{title.trim().length}/{TITLE_MAX}</span>
+          </div>
 
           <label className="form-label" style={{ marginTop: "1rem" }}>Description</label>
           <textarea
-            className="form-textarea"
+            className={`form-textarea${errors.body ? " form-field-error" : ""}`}
             placeholder="Describe your question in detail…"
             value={body}
-            onChange={e => setBody(e.target.value)}
+            onChange={e => {
+              setBody(e.target.value);
+              if (errors.body) setErrors((prev) => ({ ...prev, body: "" }));
+            }}
             rows={5}
+            maxLength={BODY_MAX}
+            aria-invalid={Boolean(errors.body)}
           />
+          <div className="form-meta-row">
+            {errors.body ? <div className="form-error-text">{errors.body}</div> : <span />}
+            <span className="form-counter">{body.trim().length}/{BODY_MAX}</span>
+          </div>
 
           <label className="form-label" style={{ marginTop: "1rem" }}>Tags <span className="form-hint">(comma separated)</span></label>
           <input
-            className="form-input"
+            className={`form-input${errors.tags ? " form-field-error" : ""}`}
             type="text"
             placeholder="e.g. SQL, joins, indexing"
             value={tags}
-            onChange={e => setTags(e.target.value)}
+            onChange={e => {
+              setTags(e.target.value);
+              if (errors.tags) setErrors((prev) => ({ ...prev, tags: "" }));
+            }}
+            aria-invalid={Boolean(errors.tags)}
           />
+          {errors.tags && <div className="form-error-text">{errors.tags}</div>}
+          {submitError && <div className="form-submit-error">{submitError}</div>}
         </div>
 
         <div className="modal-footer">
@@ -251,7 +402,7 @@ function NewPostModal({ onClose, onSubmit }) {
           <button
             className="btn-post"
             onClick={handleSubmit}
-            disabled={!title.trim() || !body.trim() || submitting}
+            disabled={submitting}
           >
             {submitting ? "Posting…" : "Post discussion"}
           </button>
@@ -304,12 +455,72 @@ export default function Forum() {
   }, [query, activeCategory, activeSort]);
 
   const handleNewPost = async (postData) => {
-    await fetch("http://localhost:8000/forum", {
+    const res = await fetch("http://localhost:8000/forum", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(postData),
     });
+
+    if (!res.ok) {
+      throw new Error("Failed to create discussion");
+    }
+
     fetchThreads(query, activeCategory, activeSort);
+  };
+
+  const handleReaction = async (threadId, userId, userName) => {
+    try {
+      console.log("Sending reaction:", { threadId, userId, userName });
+
+      const res = await fetch(`http://localhost:8000/forum/${threadId}/reaction`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          userName,
+          type: "like",
+        }),
+      });
+
+      const data = await res.json();
+      console.log("Reaction response:", data);
+
+      if (data.success) {
+        // Update the thread in the local state
+        setThreads(prevThreads =>
+          prevThreads.map(t => t._id === threadId ? data.data : t)
+        );
+        console.log("Thread updated successfully");
+      } else {
+        console.error("Reaction failed:", data.message);
+      }
+    } catch (err) {
+      console.error("Failed to add reaction:", err);
+    }
+  };
+
+  const handleDelete = async (threadId) => {
+    if (!window.confirm("Are you sure you want to delete this discussion? This action cannot be undone.")) {
+      return;
+    }
+    try {
+      const res = await fetch(`http://localhost:8000/forum/${threadId}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (data.success) {
+        setThreads(prevThreads => prevThreads.filter(t => t._id !== threadId));
+      } else {
+        alert("Failed to delete discussion: " + (data.message || "Unknown error"));
+      }
+    } catch (err) {
+      console.error("Failed to delete discussion:", err);
+      alert("Failed to delete discussion");
+    }
+  };
+
+  const handleEdit = (threadId) => {
+    window.location.href = `/forum/${threadId}`;
   };
 
   const allCategories = ["All", ...Object.keys(CATEGORY_CONFIG)];
@@ -432,7 +643,7 @@ export default function Forum() {
             </div>
           ) : (
             threads.map((thread) => (
-              <ThreadCard key={thread._id} thread={thread} />
+              <ThreadCard key={thread._id} thread={thread} onReaction={handleReaction} onDelete={handleDelete} onEdit={handleEdit} />
             ))
           )}
         </main>

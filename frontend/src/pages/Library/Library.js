@@ -465,48 +465,46 @@ export default function Library() {
         </div>
       )}
 
-      {/* HERO */}
+      {/* HERO — Home-page style, left-aligned */}
       <section className="lib-hero">
         <div className="lib-hero-bg" />
         <div className="lib-hero-overlay" />
 
-        {/* Stats chips — click to filter */}
-        <div className="lib-hero-chips">
-          <div
-            className={`lib-hero-chip lib-hero-chip-btn${!visibilityFilter ? " chip-active" : ""}`}
-            onClick={() => setVisibilityFilter(null)}
-          >
-            <BookOpen size={14} />
-            <span><strong>{stats.total}</strong> Materials</span>
+        <div className="lib-hero-content">
+          {/* Stats chips — click to filter */}
+          <div className="lib-hero-chips">
+            <div
+              className={`lib-hero-chip lib-hero-chip-btn${!visibilityFilter ? " chip-active" : ""}`}
+              onClick={() => setVisibilityFilter(null)}
+            >
+              <BookOpen size={14} />
+              <span><strong>{stats.total}</strong> Materials</span>
+            </div>
+            <div
+              className={`lib-hero-chip lib-hero-chip-btn${visibilityFilter === "public" ? " chip-active" : ""}`}
+              onClick={() => setVisibilityFilter(v => v === "public" ? null : "public")}
+            >
+              <Globe size={14} />
+              <span><strong>{stats.public}</strong> Public</span>
+            </div>
+            <div
+              className={`lib-hero-chip lib-hero-chip-private lib-hero-chip-btn${visibilityFilter === "private" ? " chip-active" : ""}`}
+              onClick={() => setVisibilityFilter(v => v === "private" ? null : "private")}
+            >
+              <Lock size={14} />
+              <span><strong>{stats.private}</strong> Private</span>
+            </div>
           </div>
-          <div
-            className={`lib-hero-chip lib-hero-chip-btn${visibilityFilter === "public" ? " chip-active" : ""}`}
-            onClick={() => setVisibilityFilter(v => v === "public" ? null : "public")}
-          >
-            <Globe size={14} />
-            <span><strong>{stats.public}</strong> Public</span>
-          </div>
-          <div
-            className={`lib-hero-chip lib-hero-chip-private lib-hero-chip-btn${visibilityFilter === "private" ? " chip-active" : ""}`}
-            onClick={() => setVisibilityFilter(v => v === "private" ? null : "private")}
-          >
-            <Lock size={14} />
-            <span><strong>{stats.private}</strong> Private</span>
-          </div>
-        </div>
 
-        {/* Bio card */}
-        <div className="lib-hero-bio">
-          <h2 className="lib-hero-bio-heading">Share your Knowledge</h2>
+          {/* Bio card */}
+          <h1 className="lib-hero-heading">Share your Knowledge</h1>
           <p className="lib-hero-bio-text">
             Got notes that helped you ace your exams? Upload them and help hundreds of juniors
             across Sri Lanka. Every resource you share builds a stronger university community —
             and earns you recognition among your peers.
           </p>
-        </div>
 
-        {/* Search bar */}
-        <div className="lib-search-wrap">
+          {/* Search bar */}
           <div className="lib-search">
             <Search size={17} className="lib-search-icon" />
             <input
