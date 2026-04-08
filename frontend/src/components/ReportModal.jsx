@@ -5,6 +5,7 @@ import { reportService } from "../services/reportService";
 import "./ReportModal.css";
 
 export default function ReportModal({ contentId, contentType, contentTitle, contentOwnerId, contentOwnerName, onClose, onSuccess }) {
+  // v2.1 - No validation blocking
   const [reason, setReason] = useState("");
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
@@ -40,28 +41,33 @@ export default function ReportModal({ contentId, contentType, contentTitle, cont
       const user = JSON.parse(localStorage.getItem("user"));
       const userId = user?._id || user?.id;
       
-      // Validate that user is not reporting their own content
-      if (userId && contentOwnerId && String(userId) === String(contentOwnerId)) {
-        setError("You cannot report your own content");
-        setLoading(false);
-        return;
+      // Get content owner ID - handle both object and string formats
+      let contentOwnerIdValue = contentOwnerId;
+      if (typeof contentOwnerId === 'object' && contentOwnerId !== null) {
+        contentOwnerIdValue = contentOwnerId._id || contentOwnerId.id;
       }
+      
+      console.log("✅ REPORT SUBMIT - No validation blocking");
       
       const reportData = {
         reportedBy: user?.name || user?.email || user?.fullName || "Anonymous",
         reportedByUserId: userId,
-        reportedUserId: contentOwnerId,
+        reportedUserId: contentOwnerIdValue,
         contentId: contentId,
         contentTitle: contentTitle,
         contentType: "File",
-        contentOwnerId: contentOwnerId,
+        contentOwnerId: contentOwnerIdValue,
         contentOwnerName: contentOwnerName,
         reason,
         description,
         status: "pending",
       };
 
-      await reportService.submitReport(reportData);
+      console.log("📤 Sending report:", reportData);
+      
+      const response = await reportService.submitReport(reportData);
+      console.log("✅ Report submitted successfully:", response);
+      
       setSuccess(true);
       if (onSuccess) onSuccess();
       
@@ -69,6 +75,7 @@ export default function ReportModal({ contentId, contentType, contentTitle, cont
         onClose();
       }, 2000);
     } catch (err) {
+      console.error("❌ Report error:", err);
       setError(err.message || "Failed to submit report");
     } finally {
       setLoading(false);

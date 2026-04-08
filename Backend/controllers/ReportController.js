@@ -4,21 +4,6 @@ const User = require("../models/Usermanagement");
 // Create Report
 exports.createReport = async (req, res) => {
   try {
-    // Validate that user is not reporting their own content
-    const { reportedUserId, contentOwnerId } = req.body;
-    
-    if (reportedUserId && contentOwnerId) {
-      const reporterIdStr = String(reportedUserId);
-      const ownerIdStr = String(contentOwnerId);
-      
-      if (reporterIdStr === ownerIdStr) {
-        return res.status(403).json({
-          success: false,
-          message: "You cannot report your own content"
-        });
-      }
-    }
-    
     // Fetch the reporter's full name (from reportedByUserId, not reportedUserId)
     let reportedByName = req.body.reportedByName || "Unknown User";
     if (req.body.reportedByUserId) {

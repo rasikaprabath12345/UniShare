@@ -109,8 +109,8 @@ function NoteCard({ note, userId, likedSet, onLikeToggle, onDownload, onDelete }
   const bgColor  = MODULE_FALLBACK_COLOR[note.module] || "#0d2257";
   const isLiked  = likedSet.has(note._id);
 
-  const noteOwnerId = String(note.user?._id ?? note.user ?? "");
-  const isOwner     = !!userId && noteOwnerId === String(userId);
+  const noteOwnerId = note.user?._id || note.user?.id;
+  const isOwner = userId && noteOwnerId && String(userId) === String(noteOwnerId);
   const isPrivate   = note.visibility === "private";
 
   return (
@@ -216,25 +216,36 @@ function NoteCard({ note, userId, likedSet, onLikeToggle, onDownload, onDelete }
               onClick={() => setShowReportModal(true)}
               title="Report this content"
             >
-              <Flag size={13} /> Report
-            </button>
+                <Flag size={13} /> Report
+              </button>
           )}
         </div>
       </div>
 
       {/* Report Modal */}
       {showReportModal && (
-        <ReportModal
-          contentId={note._id}
-          contentType="Material/File"
-          contentTitle={note.title}
-          contentOwnerId={note.user?._id}
-          contentOwnerName={note.user?.fullName}
-          onClose={() => setShowReportModal(false)}
-          onSuccess={() => {
-            // Optional: show success message or update UI
-          }}
-        />
+        <>
+          {(() => {
+            console.log("📋 Report Modal Data:");
+            console.log("   note._id:", note._id);
+            console.log("   note.user:", note.user);
+            console.log("   note.user?._id:", note.user?._id);
+            console.log("   note.user?.fullName:", note.user?.fullName);
+            console.log("   Current userId from props:", userId);
+            return null;
+          })()}
+          <ReportModal
+            contentId={note._id}
+            contentType="Material/File"
+            contentTitle={note.title}
+            contentOwnerId={note.user?._id}
+            contentOwnerName={note.user?.fullName}
+            onClose={() => setShowReportModal(false)}
+            onSuccess={() => {
+              // Optional: show success message or update UI
+            }}
+          />
+        </>
       )}
     </div>
   );
@@ -263,6 +274,12 @@ function DeleteModal({ onConfirm, onCancel, title }) {
 export default function Library() {
   const [user]   = useState(() => getUser());
   const userId   = user?._id || user?.id || null;
+
+  console.log("📚 Library Component Initialized:");
+  console.log("   localStorage user:", user);
+  console.log("   user._id:", user?._id);
+  console.log("   user.id:", user?.id);
+  console.log("   => Final userId for all notes:", userId);
 
   const [yearFilter,       setYearFilter]       = useState(null);
   const [visibilityFilter, setVisibilityFilter] = useState(null); // null | "public" | "private"
