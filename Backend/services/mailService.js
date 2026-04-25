@@ -284,10 +284,102 @@ const sendVerificationEmail = async (recipientEmail, otp, fullName = 'UniShare S
   return sendEmail(recipientEmail, "✉️ Email Verification - UniShare Registration", htmlContent);
 };
 
+/**
+ * Send session registration confirmation email.
+ * @param {string} to - Recipient email.
+ * @param {Object} sessionDetails - Session metadata used in the template.
+ */
+const sendSessionRegistrationEmail = async (to, sessionDetails) => {
+  try {
+    console.log(`\n📧 Preparing registration email for: ${to}`);
+    console.log(`   Module: ${sessionDetails.moduleName}`);
+    console.log(`   Date: ${sessionDetails.date}`);
+    console.log(`   Time: ${sessionDetails.time}`);
+    console.log(`   Link: ${sessionDetails.meetingLink}`);
+
+    const htmlContent = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+      <h2 style="color: #0d2257; margin-bottom: 12px;">Kuppi Session Registration Confirmation</h2>
+      <p>Hello ${sessionDetails.studentName || "Student"},</p>
+      <p>You have successfully registered for a Kuppi session.</p>
+
+      <div style="background-color: #f4f7ff; border-left: 4px solid #1565C0; padding: 14px; border-radius: 5px; margin: 18px 0;">
+        <p style="margin: 6px 0;"><strong>Module:</strong> ${sessionDetails.moduleName}</p>
+        <p style="margin: 6px 0;"><strong>Date:</strong> ${sessionDetails.date}</p>
+        <p style="margin: 6px 0;"><strong>Time:</strong> ${sessionDetails.time}</p>
+      </div>
+
+      <p>Join using the link below:</p>
+      <p style="word-break: break-all; margin-top: 8px;">
+        <a href="${sessionDetails.meetingLink}">${sessionDetails.meetingLink}</a>
+      </p>
+
+      <p style="margin-top: 20px;">Thank you.</p>
+      <p style="color: #888; font-size: 12px; margin-top: 24px;">UniShare Platform</p>
+    </div>
+  `;
+
+    const result = await sendEmail(to, "Kuppi Session Registration Confirmation", htmlContent);
+    console.log(`✅ Registration email sent successfully to ${to}`);
+    return result;
+  } catch (error) {
+    console.error(`❌ Failed to send registration email to ${to}:`);
+    console.error(`   Error: ${error.message}`);
+    throw error; // Re-throw to let controller handle it
+  }
+};
+
+/**
+ * Send registration notification email to meeting owner
+ * @param {string} ownerEmail - Meeting owner email
+ * @param {Object} registrationData - Registration and meeting details
+ */
+const sendRegistrationNotificationToOwner = async (ownerEmail, registrationData) => {
+  try {
+    console.log(`\n📧 Preparing registration notification for owner: ${ownerEmail}`);
+    
+    const htmlContent = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+      <h2 style="color: #0d2257; margin-bottom: 12px;">New Registration for Your Kuppi Session</h2>
+      <p>Hello ${registrationData.ownerName},</p>
+      <p>Someone has registered for your Kuppi session.</p>
+
+      <div style="background-color: #f4f7ff; border-left: 4px solid #1565C0; padding: 14px; border-radius: 5px; margin: 18px 0;">
+        <p style="margin: 8px 0; font-weight: 600;">📋 Meeting Details:</p>
+        <p style="margin: 6px 0;"><strong>Title:</strong> ${registrationData.meetingTitle}</p>
+        <p style="margin: 6px 0;"><strong>Module:</strong> ${registrationData.moduleName}</p>
+        <p style="margin: 6px 0;"><strong>Date:</strong> ${registrationData.date}</p>
+        <p style="margin: 6px 0;"><strong>Time:</strong> ${registrationData.time}</p>
+      </div>
+
+      <div style="background-color: #fff5f1; border-left: 4px solid #ff6b35; padding: 14px; border-radius: 5px; margin: 18px 0;">
+        <p style="margin: 8px 0; font-weight: 600;">👤 Registrant Details:</p>
+        <p style="margin: 6px 0;"><strong>Name:</strong> ${registrationData.registrantName}</p>
+        <p style="margin: 6px 0;"><strong>Email:</strong> ${registrationData.registrantEmail}</p>
+        ${registrationData.registrantDescription ? `<p style="margin: 6px 0;"><strong>About:</strong> ${registrationData.registrantDescription}</p>` : ''}
+      </div>
+
+      <p style="margin-top: 20px; color: #666;">Thank you for hosting this session on UniShare!</p>
+      <p style="color: #888; font-size: 12px; margin-top: 24px;">UniShare Platform</p>
+    </div>
+  `;
+
+    const result = await sendEmail(ownerEmail, `New Registration: ${registrationData.meetingTitle}`, htmlContent);
+    console.log(`✅ Registration notification sent to owner: ${ownerEmail}`);
+    return result;
+  } catch (error) {
+    console.error(`❌ Failed to send registration notification to owner ${ownerEmail}:`);
+    console.error(`   Error: ${error.message}`);
+    throw error;
+  }
+};
+
 module.exports = {
   sendEmail,
   sendForgotPasswordEmail,
   sendOTPEmail,
   sendVerificationEmail,
   sendWarningEmail,
+  sendSessionRegistrationEmail,
+  sendRegistrationNotificationToOwner,
 };
