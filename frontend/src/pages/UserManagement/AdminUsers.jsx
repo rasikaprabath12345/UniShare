@@ -437,7 +437,7 @@ function DeleteModal({ target, onClose, onConfirm }) {
 
 /* ─────────────────────────── REVIEW MODAL ─────────────────────────── */
 function ReviewModal({ report, users, adminId, onClose, onApproveWarn, onApproveDelete, onReject }) {
-  const reportedUser = users.find(u => u._id === report.reportedUserId);
+  const reportedUser = users.find(u => u._id === report.contentOwnerId) || users.find(u => u._id === report.reportedUserId);
   const [warnMsg, setWarnMsg] = useState("");
   const [action, setAction] = useState(null); // null | 'approve' | 'reject'
 
@@ -464,11 +464,11 @@ function ReviewModal({ report, users, adminId, onClose, onApproveWarn, onApprove
             </div>
             <div className="info-row" style={{ marginBottom: 0 }}>
               <div className="info-icon"><User size={13} /></div>
-              <div><div className="info-label">Reported By</div><div className="info-value" style={{ fontSize: "0.78rem" }}>{report.reportedBy}</div></div>
+              <div><div className="info-label">Reported By</div><div className="info-value" style={{ fontSize: "0.78rem" }}>{report.reportedByName}</div></div>
             </div>
             <div className="info-row" style={{ marginBottom: 0 }}>
               <div className="info-icon"><Clock size={13} /></div>
-              <div><div className="info-label">Date</div><div className="info-value" style={{ fontSize: "0.78rem" }}>{report.date}</div></div>
+              <div><div className="info-label">Date</div><div className="info-value" style={{ fontSize: "0.78rem" }}>{new Date(report.date || report.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })} at {new Date(report.date || report.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div></div>
             </div>
           </div>
           <div className="action-section-title"><MessageSquare size={12} /> Description</div>
@@ -621,7 +621,7 @@ function StudentReportsModal({ student, reports, onClose }) {
                       </div>
                       <div>
                         <div style={{ fontSize: "0.62rem", color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Reported By</div>
-                        <div style={{ fontSize: "0.72rem", color: "#444", fontWeight: 600 }}>{report.reportedBy}</div>
+                        <div style={{ fontSize: "0.72rem", color: "#444", fontWeight: 600 }}>{report.reportedByName}</div>
                       </div>
                       <div>
                         <div style={{ fontSize: "0.62rem", color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Reported User</div>
@@ -659,7 +659,7 @@ function StudentReportsModal({ student, reports, onClose }) {
 export default function AdminPanel() {
   const [tab, setTab] = useState("users");
   const [users, setUsers] = useState(MOCK_USERS);
-  const [reports, setReports] = useState(MOCK_REPORTS);
+  const [reports, setReports] = useState([]);
   const [search, setSearch] = useState("");
   const [facultyFilter, setFacultyFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -683,12 +683,25 @@ export default function AdminPanel() {
   }, []);
 
   useEffect(() => {
-    axios.get(`${API}/reports`, { headers: authHeader() })
-      .then(r => {
-        // Use real data if available, otherwise use mock data
-        setReports(r.data && r.data.length > 0 ? r.data : MOCK_REPORTS);
+    // Fetch from real API endpoint
+    fetch(`http://localhost:8000/api/reports/`)
+      .then(response => response.json())
+      .then(data => {
+        // Check if response has success flag and data array
+        if (data.success && data.data && data.data.length > 0) {
+          setReports(data.data);
+        } else if (Array.isArray(data)) {
+          // Fallback if API returns array directly
+          setReports(data);
+        } else {
+          // Use mock data if no real reports
+          setReports(MOCK_REPORTS);
+        }
       })
-      .catch(() => setReports(MOCK_REPORTS));
+      .catch(error => {
+        console.error("Error fetching reports:", error);
+        setReports(MOCK_REPORTS);
+      });
   }, []);
 
   /* ── Handlers ── */
@@ -732,8 +745,16 @@ export default function AdminPanel() {
     setReports(prev => prev.map(r => r._id === reportId ? { ...r, status: "reviewed" } : r));
     if (userId) {
       try {
-        await axios.post(`${API}/users/${userId}/warn`, { message: msg }, { headers: authHeader() });
-      } catch {}
+        const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+        await axios.post(`${API}/users/${userId}/warn`, { 
+          message: msg,
+          sentByName: currentUser.fullName || "Admin",
+          sentById: currentUser._id,
+          reportId: reportId
+        }, { headers: authHeader() });
+      } catch (err) {
+        console.error("Error sending warning:", err);
+      }
       setUsers(prev => prev.map(u => u._id === userId ? { ...u, warningCount: u.warningCount + 1 } : u));
     }
     setReviewTarget(null);
@@ -920,7 +941,6 @@ export default function AdminPanel() {
                           <th>Email</th>
                           <th>Faculty</th>
                           <th>Year / Sem</th>
-                          <th>Warnings</th>
                           <th>Reports</th>
                         </tr>
                       </thead>
@@ -934,11 +954,6 @@ export default function AdminPanel() {
                               <td className="td-email">{u.email}</td>
                               <td style={{ fontSize: "0.73rem" }}>{u.faculty.replace("Faculty of ", "")}</td>
                               <td style={{ fontSize: "0.73rem" }}>{u.academicYear} · {u.semester}</td>
-                              <td>
-                                <span className={`warn-count ${u.warningCount === 0 ? "warn-0" : u.warningCount === 1 ? "warn-1" : "warn-2plus"}`}>
-                                  {u.warningCount}
-                                </span>
-                              </td>
                               <td>
                                 {userReportCount > 0 ? (
                                   <button 
@@ -993,14 +1008,15 @@ export default function AdminPanel() {
                           <th>Type</th>
                           <th>Reason</th>
                           <th>Reported By</th>
-                          <th>Reported User</th>
                           <th>Date</th>
                           <th>Status</th>
                           <th>Action</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredReports.map(r => (
+                        {filteredReports.map(r => {
+                          const formattedDate = r.createdAt ? new Date(r.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : r.date || "N/A";
+                          return (
                           <tr key={r._id}>
                             <td className="td-name" style={{ maxWidth: 200 }}>{r.contentTitle}</td>
                             <td>
@@ -1009,9 +1025,8 @@ export default function AdminPanel() {
                               </span>
                             </td>
                             <td style={{ fontSize: "0.73rem" }}>{r.reason}</td>
-                            <td style={{ fontSize: "0.73rem" }}>{r.reportedBy}</td>
-                            <td style={{ fontSize: "0.73rem", color: "#0d2257" }}>{r.reportedUserName}</td>
-                            <td style={{ fontSize: "0.7rem", color: "#aaa" }}>{r.date}</td>
+                            <td style={{ fontSize: "0.73rem" }}>{r.reportedByName}</td>
+                            <td style={{ fontSize: "0.7rem", color: "#aaa" }}>{formattedDate}</td>
                             <td>
                               <span className={`badge ${
                                 r.status === "pending" ? "badge-pending" :
@@ -1032,7 +1047,8 @@ export default function AdminPanel() {
                               )}
                             </td>
                           </tr>
-                        ))}
+                          );
+                        })}
                       </tbody>
                     </table>
                   )}

@@ -47,6 +47,15 @@ router.put('/profile', verifyToken, userController.updateProfile);
 router.put('/account/change-password', verifyToken, userController.changePassword);
 
 // ──────────────────────────────────────────────────────────────────────
+// WARNING & NOTIFICATION ROUTES
+// ──────────────────────────────────────────────────────────────────────
+router.post('/:id/warn', userController.sendWarning);
+router.get('/:id/warnings', userController.getWarnings);
+router.get('/:id/notifications', userController.getNotifications);
+router.patch('/:userId/notifications/:notificationId/read', userController.markNotificationAsRead);
+router.patch('/:id/notifications/read-all', userController.markAllNotificationsAsRead);
+
+// ──────────────────────────────────────────────────────────────────────
 // ALL DYNAMIC :id ROUTES - MUST BE AT THE VERY END
 // ──────────────────────────────────────────────────────────────────────
 // These match patterns like /507f1f77bcf86cd799439011 (a valid ObjectId)

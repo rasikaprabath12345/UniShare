@@ -330,7 +330,7 @@ export default function Login() {
                   <button type="button" className="login-pw-toggle"
                     onClick={() => setShowPw(!showPw)}
                     aria-label={showPw ? 'Hide password' : 'Show password'}>
-                    {showPw ? '🙈' : '👁'}
+                    {showPw ? '👁' : '👁'}
                   </button>
                 </div>
               </div>

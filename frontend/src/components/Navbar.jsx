@@ -27,8 +27,12 @@ function Navbar() {
   const location   = useLocation();
   const navigate   = useNavigate();
   const dropRef    = useRef(null);
+  const notifRef   = useRef(null);
 
   const [dropOpen, setDropOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   /* ── Read user from localStorage ── */
   const user = (() => {
@@ -48,16 +52,84 @@ function Navbar() {
       if (dropRef.current && !dropRef.current.contains(e.target)) {
         setDropOpen(false);
       }
+      if (notifRef.current && !notifRef.current.contains(e.target)) {
+        setNotifOpen(false);
+      }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  /* ── Fetch notifications on component mount ── */
+  useEffect(() => {
+    if (isLoggedIn && user?._id) {
+      fetchNotifications();
+      // Refresh notifications every 30 seconds
+      const interval = setInterval(fetchNotifications, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [isLoggedIn, user?._id]);
 
   const handleLogout = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
     setDropOpen(false);
     navigate("/login");
+  };
+
+  const fetchNotifications = async () => {
+    try {
+      if (!user?._id) return;
+      const token = localStorage.getItem("token");
+      const response = await fetch(`http://localhost:5000/api/users/${user._id}/notifications`, {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setNotifications(data.notifications || []);
+        setUnreadCount(data.unreadCount || 0);
+      }
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error);
+    }
+  };
+
+  const handleNotificationRead = async (notificationId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`http://localhost:5000/api/users/${user._id}/notifications/${notificationId}/read`, {
+        method: "PATCH",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      });
+      if (response.ok) {
+        fetchNotifications();
+      }
+    } catch (error) {
+      console.error("Failed to mark notification as read:", error);
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`http://localhost:5000/api/users/${user._id}/notifications/read-all`, {
+        method: "PATCH",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      });
+      if (response.ok) {
+        fetchNotifications();
+      }
+    } catch (error) {
+      console.error("Failed to mark all as read:", error);
+    }
   };
 
   return (
@@ -354,6 +426,132 @@ function Navbar() {
           border: 2px solid white;
         }
 
+        /* ── Notification Wrapper ── */
+        .us-nav__notif-wrap {
+          position: relative;
+        }
+
+        /* ── Notification Dropdown ── */
+        .us-nav__notif-dropdown {
+          position: absolute;
+          top: calc(100% + 10px);
+          right: 0;
+          background: white;
+          border: 1px solid #dde8f8;
+          border-radius: 16px;
+          box-shadow: 0 12px 40px rgba(13,34,87,0.14), 0 2px 8px rgba(0,0,0,0.06);
+          width: 380px;
+          max-height: 500px;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          animation: navDropIn 0.18s cubic-bezier(0.34,1.4,0.64,1);
+          z-index: 300;
+        }
+
+        .us-nav__notif-header {
+          padding: 14px 18px;
+          border-bottom: 1px solid #f0f4ff;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          flex-shrink: 0;
+        }
+        .us-nav__notif-title {
+          font-size: 0.82rem;
+          font-weight: 700;
+          color: #0d2257;
+        }
+        .us-nav__notif-mark-all {
+          font-size: 0.72rem;
+          color: #1565C0;
+          background: none;
+          border: none;
+          cursor: pointer;
+          text-decoration: underline;
+          font-weight: 600;
+        }
+        .us-nav__notif-mark-all:hover {
+          color: #0d2257;
+        }
+
+        .us-nav__notif-list {
+          flex: 1;
+          overflow-y: auto;
+          padding: 0;
+        }
+
+        .us-nav__notif-item {
+          display: flex;
+          gap: 12px;
+          padding: 14px 16px;
+          border-bottom: 1px solid #f8faff;
+          cursor: pointer;
+          transition: background 0.18s;
+          background: #fafbff;
+          position: relative;
+        }
+        .us-nav__notif-item.unread {
+          background: #f0f4ff;
+        }
+        .us-nav__notif-item:hover {
+          background: #e8f0fe;
+        }
+
+        .us-nav__notif-icon {
+          font-size: 1.2rem;
+          flex-shrink: 0;
+          width: 32px;
+          text-align: center;
+        }
+
+        .us-nav__notif-content {
+          flex: 1;
+          min-width: 0;
+        }
+        .us-nav__notif-msg {
+          font-size: 0.75rem;
+          font-weight: 600;
+          color: #0d2257;
+          line-height: 1.4;
+          margin-bottom: 4px;
+          word-break: break-word;
+        }
+        .us-nav__notif-meta {
+          font-size: 0.68rem;
+          color: #6b7280;
+          margin-bottom: 2px;
+        }
+        .us-nav__notif-time {
+          font-size: 0.65rem;
+          color: #9eadc8;
+        }
+
+        .us-nav__notif-unread-dot {
+          position: absolute;
+          right: 8px;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 6px;
+          height: 6px;
+          background: #1565C0;
+          border-radius: 50%;
+          flex-shrink: 0;
+        }
+
+        .us-nav__notif-empty {
+          padding: 40px 20px;
+          text-align: center;
+          color: #9eadc8;
+          font-size: 0.76rem;
+        }
+
+        @media (max-width: 900px) {
+          .us-nav__notif-dropdown {
+            width: 320px;
+          }
+        }
+
         @media (max-width: 900px) {
           .us-nav { padding: 0 20px; }
           .us-nav__links { display: none; }
@@ -395,10 +593,61 @@ function Navbar() {
           {isLoggedIn ? (
             <>
               {/* Notification bell */}
-              <button className="us-nav__icon-btn" aria-label="Notifications">
-                <div className="us-nav__notif-dot" />
-                <Bell size={17} strokeWidth={2} />
-              </button>
+              <div className="us-nav__notif-wrap" ref={notifRef}>
+                <button 
+                  className="us-nav__icon-btn" 
+                  aria-label="Notifications"
+                  onClick={() => setNotifOpen(p => !p)}
+                >
+                  {unreadCount > 0 && <div className="us-nav__notif-dot" />}
+                  <Bell size={17} strokeWidth={2} />
+                </button>
+
+                {notifOpen && (
+                  <div className="us-nav__notif-dropdown">
+                    <div className="us-nav__notif-header">
+                      <div className="us-nav__notif-title">Notifications {unreadCount > 0 && `(${unreadCount})`}</div>
+                      {unreadCount > 0 && (
+                        <button 
+                          className="us-nav__notif-mark-all"
+                          onClick={handleMarkAllRead}
+                        >
+                          Mark all as read
+                        </button>
+                      )}
+                    </div>
+                    <div className="us-nav__notif-list">
+                      {notifications.length === 0 ? (
+                        <div className="us-nav__notif-empty">No notifications</div>
+                      ) : (
+                        notifications.map((notif) => (
+                          <div 
+                            key={notif._id}
+                            className={`us-nav__notif-item${notif.isRead ? ' read' : ' unread'}`}
+                            onClick={() => !notif.isRead && handleNotificationRead(notif._id)}
+                          >
+                            <div className="us-nav__notif-icon">
+                              {notif.type === 'warning' && '⚠️'}
+                              {notif.type === 'report' && '🚩'}
+                              {notif.type === 'message' && '💬'}
+                            </div>
+                            <div className="us-nav__notif-content">
+                              <div className="us-nav__notif-msg">{notif.message}</div>
+                              {notif.data?.sentByName && (
+                                <div className="us-nav__notif-meta">From: {notif.data.sentByName}</div>
+                              )}
+                              <div className="us-nav__notif-time">
+                                {new Date(notif.createdAt).toLocaleDateString()} {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </div>
+                            </div>
+                            {!notif.isRead && <div className="us-nav__notif-unread-dot" />}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Messages */}
               <button className="us-nav__icon-btn" aria-label="Messages">

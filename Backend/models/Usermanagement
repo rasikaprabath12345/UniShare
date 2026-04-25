@@ -142,7 +142,30 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
-  },
+    // ─── WARNINGS & NOTIFICATIONS ──────────
+    warningCount: {
+      type: Number,
+      default: 0,
+    },
+
+    warnings: [{
+      _id: mongoose.Schema.Types.ObjectId,
+      message: String,
+      sentBy: mongoose.Schema.Types.ObjectId,
+      sentByName: String,
+      sentAt: { type: Date, default: Date.now },
+      isRead: { type: Boolean, default: false },
+      reportId: mongoose.Schema.Types.ObjectId,
+    }],
+
+    notifications: [{
+      _id: mongoose.Schema.Types.ObjectId,
+      type: { type: String, enum: ['warning', 'report', 'message'], default: 'warning' },
+      message: String,
+      data: mongoose.Schema.Types.Mixed,
+      isRead: { type: Boolean, default: false },
+      createdAt: { type: Date, default: Date.now },
+    }],  },
   {
     timestamps: true,
     versionKey: false,
