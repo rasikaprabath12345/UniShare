@@ -45,6 +45,25 @@ const REACTIONS = [
   { type: 'thanks', icon: <Sparkles size={16} />, label: 'Thanks' },
 ];
 
+const getCurrentUser = () => {
+  try {
+    const rawUser = localStorage.getItem("user");
+    const user = rawUser ? JSON.parse(rawUser) : null;
+
+    return {
+      id: user?._id || user?.id || "guest",
+      name: user?.fullName || user?.name || "Anonymous",
+      year: user?.academicYear || user?.year || "",
+    };
+  } catch {
+    return {
+      id: "guest",
+      name: "Anonymous",
+      year: "",
+    };
+  }
+};
+
 export default function ForumThread() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -60,13 +79,7 @@ export default function ForumThread() {
   const [editTags, setEditTags] = useState("");
   const [editErrors, setEditErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
-
-  // Mock user data - replace with actual user context
-  const currentUser = {
-    id: "user123",
-    name: "John Doe",
-    year: "2nd Year",
-  };
+  const currentUser = getCurrentUser();
 
   useEffect(() => {
     fetchThread();
@@ -434,7 +447,7 @@ export default function ForumThread() {
           <form className="add-comment-form" onSubmit={handleAddComment}>
             <div className="comment-input-wrapper">
               <div className="comment-user-avatar" style={{ background: cfg.color }}>
-                {currentUser.name[0].toUpperCase()}
+                {(currentUser.name || "U")[0].toUpperCase()}
               </div>
               <textarea
                 className="comment-input"
