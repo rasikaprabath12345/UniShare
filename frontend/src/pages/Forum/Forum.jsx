@@ -33,6 +33,7 @@ const CATEGORY_CONFIG = {
 };
 
 
+
 const CATEGORY_ICONS = {
   "Database":         "🗄️",
   "Networking":       "🌐",
