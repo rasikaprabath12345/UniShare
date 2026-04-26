@@ -1,0 +1,37 @@
+import { test, expect } from '@playwright/test';
+
+test('test', async ({ page }) => {
+  await page.goto('http://localhost:3000/');
+  await page.getByRole('link', { name: 'Sign In →' }).click();
+  await page.getByRole('textbox', { name: 'it21xxxxxx@my.sliit.lk' }).click();
+  await page.getByRole('textbox', { name: 'it21xxxxxx@my.sliit.lk' }).fill('it23842908@my.sliit.lk');
+  await page.getByRole('textbox', { name: 'Enter your password' }).click();
+  await page.getByRole('textbox', { name: 'Enter your password' }).fill('12345678');
+  await page.getByRole('button', { name: 'Sign In →' }).click();
+  await page.getByRole('link', { name: 'Kuppi', exact: true }).click();
+  await page.getByRole('button', { name: 'Create Meeting' }).click();
+  await page.getByRole('textbox', { name: 'e.g. Introduction to Computer' }).click();
+  await page.getByRole('textbox', { name: 'e.g. Introduction to Computer' }).fill('Introduction to maths');
+  await page.getByRole('textbox', { name: 'Briefly describe what this' }).click();
+  await page.getByRole('textbox', { name: 'Briefly describe what this' }).fill('introduce the Matrix');
+  await page.getByRole('textbox', { name: 'e.g. https://teams.microsoft.' }).click();
+  await page.getByRole('textbox', { name: 'e.g. https://teams.microsoft.' }).click();
+  await page.getByRole('textbox', { name: 'e.g. https://teams.microsoft.' }).press('ArrowDown');
+  await page.getByRole('textbox', { name: 'e.g. https://teams.microsoft.' }).click();
+  await page.getByRole('textbox', { name: 'e.g. https://teams.microsoft.' }).dblclick();
+  await page.getByRole('textbox', { name: 'e.g. https://teams.microsoft.' }).click();
+  await page.getByRole('textbox', { name: 'e.g. https://teams.microsoft.' }).dblclick();
+  await page.getByRole('textbox', { name: 'e.g. https://teams.microsoft.' }).dblclick();
+  await page.getByRole('textbox', { name: 'e.g. https://teams.microsoft.' }).fill('https://teams.microsoft.com/l/meetup-join/19%3ameeting_example12345%40thread.v2/0?context=%7b%22Tid%22%3a%22example-tenant-id%22%2c%22Oid%22%3a%22example-organizer-id%22%7d');
+  await page.locator('input[name="scheduledAt"]').fill('2026-04-28');
+  await page.locator('input[name="scheduledTime"]').click();
+  await page.locator('input[name="scheduledTime"]').click();
+  await page.locator('input[name="scheduledTime"]').click();
+  await page.locator('input[name="scheduledTime"]').click();
+  await page.locator('input[name="scheduledTime"]').click();
+  await page.locator('input[name="scheduledTime"]').fill('08:30');
+  await page.getByRole('spinbutton').click();
+  await page.locator('select[name="semester"]').selectOption('1');
+  await page.locator('select[name="module"]').selectOption('IT1201 — Networking');
+  await page.getByRole('button', { name: 'Create Meeting' }).click();
+});
