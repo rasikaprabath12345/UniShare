@@ -21,6 +21,10 @@ const MeetingRouter = require("./routes/MeetingRoute");
 const BookmarkRouter = require("./routes/BookmarkRoute");
 const ReportRouter = require('./routes/ReportRoute');
 
+// Pre-load models to ensure schema registration
+require("./models/Report");
+require("./models/Usermanagement");
+
 
 // Use Routes
 app.use("/Feedback",  FeedbackRouter);

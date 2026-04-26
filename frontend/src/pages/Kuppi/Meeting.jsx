@@ -177,7 +177,6 @@ function RegisterModal({ meeting, onClose, onRegistered }) {
   });
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState("");
-  const [registeredMeetingLink, setRegisteredMeetingLink] = useState("");
   const handle = (e) => setForm({ ...form, [e.target.name]: e.target.value });
   const submit = async (e) => {
     e.preventDefault();
@@ -192,8 +191,6 @@ function RegisterModal({ meeting, onClose, onRegistered }) {
         description: form.description,
       });
 
-      const linkFromApi = response.data?.data?.meetingLink || meeting.meetingLink || "";
-      setRegisteredMeetingLink(linkFromApi);
       if (onRegistered) {
         onRegistered(meeting._id || meeting.id, meeting.title);
       }
@@ -210,20 +207,9 @@ function RegisterModal({ meeting, onClose, onRegistered }) {
             <div className="success-icon">✓</div>
             <h3>You're Registered!</h3>
             <p>Your registration is confirmed for <strong>{meeting.title}</strong>.</p>
-            {registeredMeetingLink && (
-              <>
-                <p style={{ wordBreak: "break-all" }}>
-                  Meeting Link: <a href={registeredMeetingLink} target="_blank" rel="noreferrer">{registeredMeetingLink}</a>
-                </p>
-                <button
-                  className="btn-register"
-                  type="button"
-                  onClick={() => window.open(registeredMeetingLink, "_blank", "noopener,noreferrer")}
-                >
-                  Open Meeting Link
-                </button>
-              </>
-            )}
+            <p style={{ color: "#666", fontSize: "0.9rem", marginTop: "12px" }}>
+              A confirmation email with meeting details has been sent to your registered email address.
+            </p>
             <button className="btn-close-modal" onClick={onClose}>Done</button>
           </div>
         ) : (

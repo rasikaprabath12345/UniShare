@@ -1,5 +1,9 @@
 const Meeting = require("../models/meeting");
 const MeetingRegistration = require("../models/meetingRegistration");
+const User = require("../models/Usermanagement");
+const { sendSessionRegistrationEmail, sendRegistrationNotificationToOwner } = require("../services/mailService");
+
+const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
 
 const isMicrosoftTeamsMeetingLink = (link) => {
   try {
@@ -180,12 +184,20 @@ const deleteMeeting = async (req, res) => {
 
 const registerForMeeting = async (req, res) => {
   try {
-    const { meetingId, userId, fullName, email, description } = req.body;
+    const { userId, fullName, email, description } = req.body;
+    const meetingId = req.params.sessionId || req.body.meetingId;
 
     if (!meetingId || !fullName || !email) {
       return res.status(400).json({
         success: false,
         message: "meetingId, fullName and email are required",
+      });
+    }
+
+    if (!isValidEmail(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a valid email address",
       });
     }
 
@@ -197,13 +209,88 @@ const registerForMeeting = async (req, res) => {
       });
     }
 
+    const normalizedEmail = String(email).toLowerCase().trim();
+    const alreadyRegistered = await MeetingRegistration.findOne({
+      meetingId,
+      email: normalizedEmail,
+    });
+    if (alreadyRegistered) {
+      return res.status(409).json({
+        success: false,
+        message: "This email is already registered for this meeting",
+      });
+    }
+
     const registration = await MeetingRegistration.create({
       meetingId,
       userId: userId || null,
       fullName,
-      email,
+      email: normalizedEmail,
       description,
     });
+
+    const sessionDetails = {
+      moduleName: meeting.module,
+      date: new Date(meeting.scheduledAt).toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }),
+      time: new Date(meeting.scheduledAt).toLocaleTimeString("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      meetingLink: meeting.meetingLink,
+      studentName: fullName,
+    };
+
+    console.log("\n🔄 Starting email send process...");
+    let emailSent = false;
+    let emailError = null;
+    let ownerNotificationSent = false;
+
+    try {
+      await sendSessionRegistrationEmail(normalizedEmail, sessionDetails);
+      emailSent = true;
+      console.log(`✅ Email successfully sent to ${normalizedEmail}`);
+    } catch (mailError) {
+      emailError = mailError.message;
+      console.error(`❌ Email failed for ${normalizedEmail}:`, mailError.message);
+      console.error(`   Full error:`, mailError);
+    }
+
+    // Send notification email to meeting owner
+    try {
+      const owner = await User.findById(meeting.ownerId).select("email fullName");
+      
+      if (owner && owner.email) {
+        const ownerNotificationData = {
+          ownerName: owner.fullName || meeting.ownerName || "Host",
+          meetingTitle: meeting.title,
+          moduleName: meeting.module,
+          date: new Date(meeting.scheduledAt).toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          }),
+          time: new Date(meeting.scheduledAt).toLocaleTimeString("en-GB", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          registrantName: fullName,
+          registrantEmail: normalizedEmail,
+          registrantDescription: description || "No description provided",
+        };
+
+        await sendRegistrationNotificationToOwner(owner.email, ownerNotificationData);
+        ownerNotificationSent = true;
+        console.log(`✅ Registration notification sent to owner: ${owner.email}`);
+      } else {
+        console.warn("⚠️ Owner email not found for notification");
+      }
+    } catch (ownerMailError) {
+      console.error(`❌ Failed to send owner notification:`, ownerMailError.message);
+    }
 
     return res.status(201).json({
       success: true,
@@ -211,6 +298,11 @@ const registerForMeeting = async (req, res) => {
       data: {
         registration,
         meetingLink: meeting.meetingLink,
+      },
+      emailStatus: {
+        sent: emailSent,
+        ownerNotified: ownerNotificationSent,
+        error: emailError || null,
       },
     });
   } catch (error) {

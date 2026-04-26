@@ -33,7 +33,7 @@ router.get("/my/:userId", async (req, res) => {
     const Material = require("../models/Material");
 
     const materials = await Material.find({ user: req.params.userId })
-      .populate("user", "fullName email")
+      .populate("user", "fullName email _id")
       .sort({ createdAt: -1 });
 
     res.json({

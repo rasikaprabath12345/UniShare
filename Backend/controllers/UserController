@@ -978,3 +978,276 @@ exports.resetPassword = async (req, res) => {
     });
   }
 };
+
+// ═══════════════════════════════════════════════════════════════════════
+// SEND WARNING TO USER - Called by admin when approving report warning
+// ═══════════════════════════════════════════════════════════════════════
+exports.sendWarning = async (req, res) => {
+  try {
+    console.log('\n' + '═'.repeat(70));
+    console.log('⚠️  SEND WARNING REQUEST');
+    console.log('═'.repeat(70));
+
+    const userId = req.params.id;
+    const { message, sentByName, sentById, reportId } = req.body;
+
+    // ─── VALIDATION: Check userId exists ────────────────────────────────
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+      console.error('❌ Invalid user ID');
+      return res.status(400).json({
+        message: 'Invalid user ID'
+      });
+    }
+
+    // ─── VALIDATION: Check message provided ──────────────────────────────
+    if (!message || !message.trim()) {
+      console.error('❌ No warning message provided');
+      return res.status(400).json({
+        message: 'Warning message is required'
+      });
+    }
+
+    console.log(`📧 Sending warning to user: ${userId}`);
+    console.log(`   Message: ${message.substring(0, 50)}...`);
+
+    // ─── DATABASE: Find user ─────────────────────────────────────────────
+    const user = await User.findById(userId);
+    if (!user) {
+      console.error(`❌ User not found: ${userId}`);
+      return res.status(404).json({
+        message: 'User not found'
+      });
+    }
+
+    // ─── ADD WARNING: Create warning object ───────────────────────────────
+    const warningId = new mongoose.Types.ObjectId();
+    const warning = {
+      _id: warningId,
+      message: message.trim(),
+      sentBy: sentById,
+      sentByName: sentByName || 'Admin',
+      sentAt: new Date(),
+      isRead: false,
+      reportId: reportId,
+    };
+
+    // Initialize warnings array if it doesn't exist
+    if (!user.warnings) {
+      user.warnings = [];
+    }
+
+    // Add warning to array
+    user.warnings.push(warning);
+
+    // ─── INCREMENT: Warning count ────────────────────────────────────────
+    user.warningCount = (user.warningCount || 0) + 1;
+
+    // ─── ADD NOTIFICATION: Also add to notifications array ───────────────
+    if (!user.notifications) {
+      user.notifications = [];
+    }
+
+    const notificationId = new mongoose.Types.ObjectId();
+    user.notifications.push({
+      _id: notificationId,
+      type: 'warning',
+      message: `You have received a warning: ${message.substring(0, 50)}...`,
+      data: {
+        warningId: warningId,
+        sentByName: sentByName || 'Admin',
+        fullMessage: message,
+      },
+      isRead: false,
+      createdAt: new Date(),
+    });
+
+    // ─── SAVE: Update user document ──────────────────────────────────────
+    await user.save();
+
+    console.log(`✅ Warning added successfully`);
+    console.log(`   Warning ID: ${warningId}`);
+    console.log(`   Total warnings: ${user.warningCount}`);
+    console.log(`   Total notifications: ${user.notifications.length}`);
+    console.log('═'.repeat(70) + '\n');
+
+    res.status(200).json({
+      success: true,
+      message: 'Warning sent successfully',
+      warningId: warningId,
+      warningCount: user.warningCount,
+      unreadNotifications: user.notifications.filter(n => !n.isRead).length
+    });
+
+  } catch (error) {
+    console.error('🔴 ERROR in sendWarning:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to send warning'
+    });
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// GET USER WARNINGS
+// ═══════════════════════════════════════════════════════════════════════
+exports.getWarnings = async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    // ─── VALIDATION: Check userId exists ────────────────────────────────
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({
+        message: 'Invalid user ID'
+      });
+    }
+
+    // ─── DATABASE: Find user ─────────────────────────────────────────────
+    const user = await User.findById(userId).select('warnings warningCount');
+    
+    if (!user) {
+      return res.status(404).json({
+        message: 'User not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      warnings: user.warnings || [],
+      warningCount: user.warningCount || 0
+    });
+
+  } catch (error) {
+    console.error('🔴 ERROR in getWarnings:', error);
+    res.status(500).json({
+      message: error.message || 'Failed to retrieve warnings'
+    });
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// GET USER NOTIFICATIONS
+// ═══════════════════════════════════════════════════════════════════════
+exports.getNotifications = async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    // ─── VALIDATION: Check userId exists ────────────────────────────────
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({
+        message: 'Invalid user ID'
+      });
+    }
+
+    // ─── DATABASE: Find user ─────────────────────────────────────────────
+    const user = await User.findById(userId).select('notifications');
+    
+    if (!user) {
+      return res.status(404).json({
+        message: 'User not found'
+      });
+    }
+
+    const notifications = user.notifications || [];
+    const unreadCount = notifications.filter(n => !n.isRead).length;
+
+    res.status(200).json({
+      success: true,
+      notifications: notifications,
+      unreadCount: unreadCount,
+      totalCount: notifications.length
+    });
+
+  } catch (error) {
+    console.error('🔴 ERROR in getNotifications:', error);
+    res.status(500).json({
+      message: error.message || 'Failed to retrieve notifications'
+    });
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// MARK NOTIFICATION AS READ
+// ═══════════════════════════════════════════════════════════════════════
+exports.markNotificationAsRead = async (req, res) => {
+  try {
+    const { userId, notificationId } = req.params;
+
+    if (!userId || !notificationId || !mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(notificationId)) {
+      return res.status(400).json({
+        message: 'Invalid user ID or notification ID'
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        message: 'User not found'
+      });
+    }
+
+    const notification = user.notifications.find(n => n._id.toString() === notificationId);
+    if (!notification) {
+      return res.status(404).json({
+        message: 'Notification not found'
+      });
+    }
+
+    notification.isRead = true;
+    await user.save();
+
+    const unreadCount = user.notifications.filter(n => !n.isRead).length;
+
+    res.status(200).json({
+      success: true,
+      message: 'Notification marked as read',
+      unreadCount: unreadCount
+    });
+
+  } catch (error) {
+    console.error('🔴 ERROR in markNotificationAsRead:', error);
+    res.status(500).json({
+      message: error.message || 'Failed to mark notification as read'
+    });
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// MARK ALL NOTIFICATIONS AS READ
+// ═══════════════════════════════════════════════════════════════════════
+exports.markAllNotificationsAsRead = async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({
+        message: 'Invalid user ID'
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        message: 'User not found'
+      });
+    }
+
+    // Mark all notifications as read
+    if (user.notifications && user.notifications.length > 0) {
+      user.notifications.forEach(n => {
+        n.isRead = true;
+      });
+      await user.save();
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'All notifications marked as read'
+    });
+
+  } catch (error) {
+    console.error('🔴 ERROR in markAllNotificationsAsRead:', error);
+    res.status(500).json({
+      message: error.message || 'Failed to mark all notifications as read'
+    });
+  }
+};

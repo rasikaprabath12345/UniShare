@@ -100,10 +100,16 @@ const getMaterials = async (req, res) => {
     const total = await Material.countDocuments(filter);
 
     const items = await Material.find(filter)
-      .populate("user", "fullName email")
+      .populate("user", "fullName email _id")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(Number(limit));
+
+    // DEBUG: Log what we're returning
+    if (items && items.length > 0) {
+      console.log("📚 getMaterials returned", items.length, "items");
+      console.log("First item user data:", items[0].user);
+    }
 
     res.json({
       success: true,
@@ -125,7 +131,7 @@ const getMaterials = async (req, res) => {
 const getMaterialById = async (req, res) => {
   try {
     const material = await Material.findById(req.params.id)
-      .populate("user", "fullName email");
+      .populate("user", "fullName email _id");
 
     if (!material) {
       return res.status(404).json({

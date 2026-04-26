@@ -27,9 +27,23 @@ const ReportSchema = new mongoose.Schema({
     required: true
   },
 
+  reportedByName: {
+    type: String,
+    required: true
+  },
+
   reportedUserId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
+    required: true
+  },
+
+  contentOwnerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true
+  },
+
+  contentOwnerName: {
+    type: String,
     required: true
   },
 

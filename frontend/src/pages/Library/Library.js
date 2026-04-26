@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
+import ReportModal from "../../components/ReportModal";
 import {
   Search, Upload, Download, ThumbsUp, Clock, GraduationCap,
   Globe, Lock, Heart, Eye, Trash2, BookOpen, User,
-  CheckCircle, X
+  CheckCircle, X, Flag
 } from "lucide-react";
 import UploadNotes from "./UploadPdf";
 import "./Library.css";
@@ -101,15 +102,15 @@ function SkeletonCard() {
 }
 
 // ── Single note card ──────────────────────────────────────────────────────────
-function NoteCard({ note, userId, likedSet, onLikeToggle, onDownload, onDelete }) {
+function NoteCard({ note, userId, likedSet, onLikeToggle, onDownload, onDelete }) {  const [showReportModal, setShowReportModal] = useState(false);
   const level    = yearToLevel(note.year);
   const lv       = LEVEL_COLORS[level];
   const image    = MODULE_IMAGE[note.module];
   const bgColor  = MODULE_FALLBACK_COLOR[note.module] || "#0d2257";
   const isLiked  = likedSet.has(note._id);
 
-  const noteOwnerId = String(note.user?._id ?? note.user ?? "");
-  const isOwner     = !!userId && noteOwnerId === String(userId);
+  const noteOwnerId = note.user?._id || note.user?.id;
+  const isOwner = userId && noteOwnerId && String(userId) === String(noteOwnerId);
   const isPrivate   = note.visibility === "private";
 
   return (
@@ -188,6 +189,12 @@ function NoteCard({ note, userId, likedSet, onLikeToggle, onDownload, onDelete }
           </span>
         </div>
 
+        {/* Uploader info */}
+        <div className="note-uploader">
+          <User size={12} />
+          <span>Uploaded by: <strong>{note.user?.fullName || "Unknown"}</strong></span>
+        </div>
+
         {/* Actions */}
         <div className="note-actions">
           <button className="btn-view" onClick={() => window.open(note.fileUrl, "_blank")}>
@@ -203,8 +210,43 @@ function NoteCard({ note, userId, likedSet, onLikeToggle, onDownload, onDelete }
           >
             <Download size={13} /> Download
           </a>
+          {!isOwner && (
+            <button
+              className="btn-report"
+              onClick={() => setShowReportModal(true)}
+              title="Report this content"
+            >
+                <Flag size={13} /> Report
+              </button>
+          )}
         </div>
       </div>
+
+      {/* Report Modal */}
+      {showReportModal && (
+        <>
+          {(() => {
+            console.log("📋 Report Modal Data:");
+            console.log("   note._id:", note._id);
+            console.log("   note.user:", note.user);
+            console.log("   note.user?._id:", note.user?._id);
+            console.log("   note.user?.fullName:", note.user?.fullName);
+            console.log("   Current userId from props:", userId);
+            return null;
+          })()}
+          <ReportModal
+            contentId={note._id}
+            contentType="Material/File"
+            contentTitle={note.title}
+            contentOwnerId={note.user?._id}
+            contentOwnerName={note.user?.fullName}
+            onClose={() => setShowReportModal(false)}
+            onSuccess={() => {
+              // Optional: show success message or update UI
+            }}
+          />
+        </>
+      )}
     </div>
   );
 }
@@ -232,6 +274,12 @@ function DeleteModal({ onConfirm, onCancel, title }) {
 export default function Library() {
   const [user]   = useState(() => getUser());
   const userId   = user?._id || user?.id || null;
+
+  console.log("📚 Library Component Initialized:");
+  console.log("   localStorage user:", user);
+  console.log("   user._id:", user?._id);
+  console.log("   user.id:", user?.id);
+  console.log("   => Final userId for all notes:", userId);
 
   const [yearFilter,       setYearFilter]       = useState(null);
   const [visibilityFilter, setVisibilityFilter] = useState(null); // null | "public" | "private"
