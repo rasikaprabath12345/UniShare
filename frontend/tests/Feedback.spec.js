@@ -9,7 +9,6 @@ test('test', async ({ page }) => {
   await page.getByRole('button', { name: 'Feedback' }).click();
   await page.getByRole('textbox', { name: 'Tell us what you love, what' }).fill('Test feedback');
 
-  // Click the svg directly (not the inner path) with force to bypass pointer-events interception
   await page.locator('.lucide-star.fb-star').first().click({ force: true });
 
   await page.getByRole('button', { name: 'Submit Feedback' }).click();

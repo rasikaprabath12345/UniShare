@@ -16,7 +16,6 @@ test('test', async ({ page }) => {
   await page.locator('.qz-mat-thumb-overlay').first().click();
   await page.waitForLoadState('networkidle');
 
-  // ✅ Fix — new tab නෑ, same page එකේ load වෙනවා
   await page.getByRole('button', { name: 'Generate Quiz' }).click();
   await page.waitForLoadState('networkidle');
 

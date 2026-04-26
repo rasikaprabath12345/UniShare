@@ -21,7 +21,6 @@ test('test', async ({ page }) => {
   await page.getByRole('button', { name: 'Upload PDF' }).click();
   await page.getByText('Drag & drop your PDF hereor').click();
 
-  // ✅ Fix 1 — input[type="file"] + correct path
   await page.locator('input[type="file"]').setInputFiles(
     path.join(__dirname, 'uploads/7 - Frontend development overview.pdf')
   );
@@ -40,13 +39,11 @@ test('test', async ({ page }) => {
   await page.getByRole('button', { name: 'Upload Another' }).click();
   await page.getByRole('button', { name: 'Cancel' }).click();
 
-  // ✅ Fix 2 — My Notes view switch කරන්න Delete button පෙනෙන්න
   await page.getByRole('button', { name: 'My Notes' }).click();
   await page.waitForTimeout(500);
 
   await page.getByRole('button', { name: 'Delete' }).first().click();
 
-  // ✅ Fix 3 — confirm button visible වෙනකම් wait කරන්න
   await page.locator('button.lib-delete-confirm').waitFor({ state: 'visible' });
   await page.locator('button.lib-delete-confirm').click();
 
