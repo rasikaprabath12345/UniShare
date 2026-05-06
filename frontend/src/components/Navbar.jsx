@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Bell, MessageCircle, ChevronDown, LogOut, User, Settings, Shield } from "lucide-react";
 
+const API_BASE_URL = "http://localhost:8000";
+
 /* ─── Role badge colours ─────────────────────────────────────── */
 const ROLE_META = {
   student: { label: "Student",  color: "#1565C0", bg: "#e8f0fe" },
@@ -41,6 +43,7 @@ function Navbar() {
   })();
 
   const isLoggedIn = !!user;
+  const userId = user?._id || user?.id;
   const role       = user?.role ?? "student";
   const roleMeta   = ROLE_META[role] ?? ROLE_META.student;
   const displayName = user?.fullName ?? user?.name ?? "User";
@@ -62,13 +65,13 @@ function Navbar() {
 
   /* ── Fetch notifications on component mount ── */
   useEffect(() => {
-    if (isLoggedIn && user?._id) {
+    if (isLoggedIn && userId) {
       fetchNotifications();
       // Refresh notifications every 30 seconds
       const interval = setInterval(fetchNotifications, 30000);
       return () => clearInterval(interval);
     }
-  }, [isLoggedIn, user?._id]);
+  }, [isLoggedIn, userId]);
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -79,9 +82,9 @@ function Navbar() {
 
   const fetchNotifications = async () => {
     try {
-      if (!user?._id) return;
+      if (!userId) return;
       const token = localStorage.getItem("token");
-      const response = await fetch(`http://localhost:5000/api/users/${user._id}/notifications`, {
+      const response = await fetch(`${API_BASE_URL}/api/users/${userId}/notifications`, {
         headers: {
           "Authorization": `Bearer ${token}`
         }
@@ -99,7 +102,7 @@ function Navbar() {
   const handleNotificationRead = async (notificationId) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`http://localhost:5000/api/users/${user._id}/notifications/${notificationId}/read`, {
+      const response = await fetch(`${API_BASE_URL}/api/users/${userId}/notifications/${notificationId}/read`, {
         method: "PATCH",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -117,7 +120,7 @@ function Navbar() {
   const handleMarkAllRead = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`http://localhost:5000/api/users/${user._id}/notifications/read-all`, {
+      const response = await fetch(`${API_BASE_URL}/api/users/${userId}/notifications/read-all`, {
         method: "PATCH",
         headers: {
           "Authorization": `Bearer ${token}`,

@@ -1,5 +1,19 @@
 const Report = require("../models/Report");
 const User = require("../models/Usermanagement");
+const Material = require("../models/Material");
+const mongoose = require("mongoose");
+
+const normalizeObjectId = (value) => {
+  if (!value) return null;
+  if (typeof value === "object") {
+    value = value._id || value.id || null;
+  }
+  if (!value) return null;
+  const idString = String(value);
+  return mongoose.Types.ObjectId.isValid(idString)
+    ? new mongoose.Types.ObjectId(idString)
+    : null;
+};
 
 // Create Report
 exports.createReport = async (req, res) => {
@@ -22,6 +36,125 @@ exports.createReport = async (req, res) => {
     
     const report = new Report(reportData);
     const savedReport = await report.save();
+
+    // Notify reporter, content owner, and admins about the new report.
+    const reporterId = req.body.reportedByUserId;
+    let ownerObjectId =
+      normalizeObjectId(req.body.contentOwnerId) ||
+      normalizeObjectId(req.body.reportedUserId);
+    const notifiedUserIds = new Set();
+
+    // Fallback: derive owner from material record if request did not include valid owner id.
+    if (!ownerObjectId && req.body.contentId) {
+      try {
+        const material = await Material.findById(req.body.contentId).select("user");
+        ownerObjectId = normalizeObjectId(material?.user);
+      } catch (ownerLookupError) {
+        console.error("Failed to resolve owner from material:", ownerLookupError.message);
+      }
+    }
+
+    const reporterObjectId = normalizeObjectId(reporterId);
+    if (reporterObjectId) {
+      try {
+        const reporterUpdateResult = await User.updateOne(
+          { _id: reporterObjectId },
+          {
+            $push: {
+              notifications: {
+                _id: new mongoose.Types.ObjectId(),
+                type: "report",
+                message: `Your report for "${savedReport.contentTitle}" was submitted.`,
+                data: {
+                  reportId: savedReport._id,
+                  contentId: savedReport.contentId,
+                  contentType: savedReport.contentType,
+                  reason: savedReport.reason,
+                  status: savedReport.status
+                },
+                isRead: false,
+                createdAt: new Date()
+              }
+            }
+          }
+        );
+
+        if (reporterUpdateResult.modifiedCount > 0) {
+          notifiedUserIds.add(reporterObjectId.toString());
+        }
+      } catch (notifyReporterError) {
+        console.error("Failed to notify reporter:", notifyReporterError.message);
+      }
+    }
+
+    if (ownerObjectId) {
+      try {
+        const ownerUpdateResult = await User.updateOne(
+          { _id: ownerObjectId },
+          {
+            $push: {
+              notifications: {
+                _id: new mongoose.Types.ObjectId(),
+                type: "report",
+                message: `Your material "${savedReport.contentTitle}" was reported.`,
+                data: {
+                  reportId: savedReport._id,
+                  contentId: savedReport.contentId,
+                  contentType: savedReport.contentType,
+                  reason: savedReport.reason,
+                  status: savedReport.status
+                },
+                isRead: false,
+                createdAt: new Date()
+              }
+            }
+          }
+        );
+
+        if (ownerUpdateResult.modifiedCount > 0) {
+          notifiedUserIds.add(ownerObjectId.toString());
+        }
+      } catch (notifyOwnerError) {
+        console.error("Failed to notify content owner:", notifyOwnerError.message);
+      }
+    }
+
+    try {
+      const admins = await User.find({ role: "admin" }).select("_id");
+      for (const admin of admins) {
+        const adminId = admin._id.toString();
+        if (notifiedUserIds.has(adminId)) {
+          continue;
+        }
+
+        await User.updateOne(
+          { _id: admin._id },
+          {
+            $push: {
+              notifications: {
+                _id: new mongoose.Types.ObjectId(),
+                type: "report",
+                message: `A new report was submitted for "${savedReport.contentTitle}".`,
+                data: {
+                  reportId: savedReport._id,
+                  contentId: savedReport.contentId,
+                  contentType: savedReport.contentType,
+                  reason: savedReport.reason,
+                  reportedBy: savedReport.reportedByName || savedReport.reportedBy,
+                  contentOwnerId: savedReport.contentOwnerId,
+                  status: savedReport.status
+                },
+                isRead: false,
+                createdAt: new Date()
+              }
+            }
+          }
+        );
+      }
+    } catch (notifyAdminError) {
+      console.error("Failed to notify admins:", notifyAdminError.message);
+    }
+
     res.status(201).json({
       success: true,
       data: savedReport,
