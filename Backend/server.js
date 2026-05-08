@@ -3,6 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const path = require("path");
 
 const app = express();
 
@@ -38,19 +39,28 @@ app.use("/api/meetings", MeetingRouter);
 app.use("/api/bookmarks", BookmarkRouter);
 app.use("/api/reports", ReportRouter);
 
-
+// Serve frontend build files
+const frontendBuildPath = path.join(__dirname, "../frontend/build");
+app.use(express.static(frontendBuildPath));
 
 // Test Route
 app.get("/", (req, res) => {
-  res.send("Backend Running...");
+  res.sendFile(path.join(frontendBuildPath, "index.html"));
 });
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: `Route not found: ${req.method} ${req.originalUrl}`
-  });
+// Serve frontend for all other routes (SPA fallback)
+app.get("*", (req, res) => {
+  // Don't serve index.html for API routes that already exist
+  if (req.url.startsWith("/api") || req.url.startsWith("/Feedback") || 
+      req.url.startsWith("/quiz") || req.url.startsWith("/Materials") ||
+      req.url.startsWith("/User") || req.url.startsWith("/Forum") ||
+      req.url.startsWith("/uploads")) {
+    return res.status(404).json({
+      success: false,
+      message: `Route not found: ${req.method} ${req.originalUrl}`
+    });
+  }
+  res.sendFile(path.join(frontendBuildPath, "index.html"));
 });
 
 // Global error handler
