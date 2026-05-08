@@ -413,6 +413,7 @@ function PhaseQuiz({ quiz, onSubmit }) {
       setTimeLeft(prev => { if (prev <= 1) { clearInterval(t); doSubmit(true); return 0; } return prev - 1; });
     }, 1000);
     return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [submitted]);
 
   const doSubmit = useCallback((auto = false) => {
