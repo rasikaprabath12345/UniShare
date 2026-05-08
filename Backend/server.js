@@ -1,4 +1,9 @@
-require("dotenv").config();
+try {
+  // Optional: use .env locally if dotenv is available.
+  require("dotenv").config();
+} catch (_error) {
+  // In Vercel, environment variables come from project settings.
+}
 
 const express = require("express");
 const mongoose = require("mongoose");
