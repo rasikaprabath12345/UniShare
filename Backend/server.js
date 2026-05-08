@@ -3,17 +3,24 @@ require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-const path = require("path");
 
 const app = express();
 
 // CORS Configuration - Allow your Netlify frontend
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://unishare-platform.netlify.app",
+  "https://uni-share-theta.vercel.app",
+  ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
+];
+
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || [
-    "http://localhost:3000",
-    "https://unishare-platform.netlify.app", // Your Netlify frontend URL
-    "https://uni-share-theta.vercel.app" // Your Vercel backend URL
-  ],
+  origin: (origin, callback) => {
+    // Allow non-browser clients and same-origin calls
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error("Not allowed by CORS"));
+  },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
@@ -38,56 +45,6 @@ const ReportRouter = require('./routes/ReportRoute');
 require("./models/Report");
 require("./models/Usermanagement");
 
-
-// Use Routes
-app.use("/Feedback",  FeedbackRouter);
-app.use("/quiz",      QuizRouter);
-app.use("/uploads",   express.static("uploads"));
-app.use("/Materials", MaterialRouter);
-app.use("/User", UserRouter);
-app.use("/api/users", UserRouter); // API prefix routes
-app.use("/Forum", ForumRouter);
-app.use("/api/meetings", MeetingRouter);
-app.use("/api/bookmarks", BookmarkRouter);
-app.use("/api/reports", ReportRouter);
-
-// Root route for debugging
-app.get("/", (req, res) => {
-  res.json({ 
-    message: "🎓 UniShare Backend API",
-    version: "1.0.0",
-    status: "Running ✅",
-    docs: "/api/health"
-  });
-});
-
-// Health check route
-app.get("/api/health", (req, res) => {
-  const dbStatus = isConnected ? "Connected ✅" : "Disconnected ⚠️";
-  res.status(200).json({ 
-    status: "Backend is running ✅",
-    database: dbStatus,
-    environment: process.env.NODE_ENV || "unknown",
-    timestamp: new Date().toISOString()
-  });
-});
-
-// 404 handler for API routes
-app.use("/api", (req, res) => {
-  res.status(404).json({
-    success: false,
-    message: `API Route not found: ${req.method} ${req.originalUrl}`
-  });
-});
-
-// Global error handler
-app.use((err, req, res, next) => {
-  console.error("Server error:", err.message);
-  res.status(err.status || 500).json({
-    success: false,
-    message: err.message || "Server error"
-  });
-});
 
 // MongoDB Connection - Handle both local and serverless environments
 let isConnected = false;
@@ -142,6 +99,56 @@ app.use(async (req, res, next) => {
     await connectToMongoDB();
   }
   next();
+});
+
+// Use Routes
+app.use("/Feedback",  FeedbackRouter);
+app.use("/quiz",      QuizRouter);
+app.use("/uploads",   express.static("uploads"));
+app.use("/Materials", MaterialRouter);
+app.use("/User", UserRouter);
+app.use("/api/users", UserRouter); // API prefix routes
+app.use("/Forum", ForumRouter);
+app.use("/api/meetings", MeetingRouter);
+app.use("/api/bookmarks", BookmarkRouter);
+app.use("/api/reports", ReportRouter);
+
+// Root route for debugging
+app.get("/", (req, res) => {
+  res.json({
+    message: "UniShare Backend API",
+    version: "1.0.0",
+    status: "Running",
+    docs: "/api/health"
+  });
+});
+
+// Health check route
+app.get("/api/health", (req, res) => {
+  const dbStatus = isConnected ? "Connected" : "Disconnected";
+  res.status(200).json({
+    status: "Backend is running",
+    database: dbStatus,
+    environment: process.env.NODE_ENV || "unknown",
+    timestamp: new Date().toISOString()
+  });
+});
+
+// 404 handler for API routes
+app.use("/api", (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `API Route not found: ${req.method} ${req.originalUrl}`
+  });
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error("Server error:", err.message);
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || "Server error"
+  });
 });
 
 // Export app for Vercel serverless
