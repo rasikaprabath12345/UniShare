@@ -6,13 +6,20 @@ const cors = require("cors");
 
 const app = express();
 
-// CORS Configuration - Allow your Netlify frontend
-const allowedOrigins = [
+// CORS Configuration
+const defaultOrigins = [
   "http://localhost:3000",
   "https://unishare-platform.netlify.app",
   "https://uni-share-theta.vercel.app",
-  ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
 ];
+
+const configuredOrigins = (process.env.FRONTEND_URL || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+// If FRONTEND_URL is set, use only that value (or comma-separated values).
+const allowedOrigins = configuredOrigins.length > 0 ? configuredOrigins : defaultOrigins;
 
 const corsOptions = {
   origin: (origin, callback) => {

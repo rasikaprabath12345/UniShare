@@ -108,7 +108,8 @@ function About() {
 
       {/* Features */}
       <section className="about-features" style={featuresStyle}>
-        <h2>Our Features</h2>
+        <h2>Our  Features</h2>
+        
 
         <div className="feature-grid">
           <div className="feature-card">
@@ -303,5 +304,8 @@ function About() {
     </div>
   );
 }
+
+
+
 
 export default About;
