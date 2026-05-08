@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import API_BASE_URL from '../../config/api';
 
 /* ── Scoped styles — matches UniShare theme (Navy #0d2257 · Blue #1565C0 · Poppins) ── */
 const styles = `
@@ -264,7 +265,7 @@ export default function ResetPassword() {
     setMessage({ text: 'Verifying OTP...', type: 'info' });
 
     try {
-      await axios.post('http://localhost:8000/api/users/verify-otp', {
+      await axios.post(`${API_BASE_URL}/api/users/verify-otp`, {
         email: email.toLowerCase(),
         otp: otp.trim()
       });
@@ -311,7 +312,7 @@ export default function ResetPassword() {
     setMessage({ text: 'Resetting password...', type: 'info' });
 
     try {
-      await axios.post('http://localhost:8000/api/users/reset-password', {
+      await axios.post(`${API_BASE_URL}/api/users/reset-password`, {
         email: email.toLowerCase(),
         otp: otp.trim(),
         newPassword,

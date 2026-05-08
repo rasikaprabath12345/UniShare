@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import API_BASE_URL from '../../config/api';
 
 /* ── Scoped styles — matches UniShare theme (Navy #0d2257 · Blue #1565C0 · Poppins) ── */
 const styles = `
@@ -200,7 +201,7 @@ export default function ForgotPassword() {
 
     try {
       // Send OTP request to backend
-      await axios.post('http://localhost:8000/api/users/forgot-password', {
+      await axios.post(`${API_BASE_URL}/api/users/forgot-password`, {
         email: email.toLowerCase().trim(),
       });
 

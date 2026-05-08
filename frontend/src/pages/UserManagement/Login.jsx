@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import API_BASE_URL from '../../config/api';
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
@@ -269,7 +270,7 @@ export default function Login() {
     setError('');
     setLoading(true);
     try {
-      const res = await axios.post('http://localhost:8000/User/login', {
+      const res = await axios.post(`${API_BASE_URL}/User/login`, {
         email:    formData.email.toLowerCase().trim(),
         password: formData.password,
       });

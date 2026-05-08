@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import API_BASE_URL from "../../config/api";
 import { Lock, Eye, EyeOff, ChevronLeft, CheckCircle, XCircle, ShieldCheck } from "lucide-react";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
@@ -61,7 +62,7 @@ export default function ChangePassword() {
 
       // ✅ Send to NEW endpoint: /account/change-password
       await axios.put(
-        "http://localhost:8000/api/users/account/change-password",
+        `${API_BASE_URL}/api/users/account/change-password`,
         {
           userId: user._id,
           currentPassword: formData.currentPassword,

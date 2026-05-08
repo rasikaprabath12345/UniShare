@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import API_BASE_URL from '../../config/api';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import {
@@ -73,7 +74,7 @@ export default function EditProfile() {
       if (profileFile) {
         const fd = new FormData();
         fd.append('profilePicture', profileFile);
-        const picRes = await axios.put('http://localhost:8000/api/users/profile-picture', fd, {
+        const picRes = await axios.put(`${API_BASE_URL}/api/users/profile-picture`, fd, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -83,7 +84,7 @@ export default function EditProfile() {
         }
       }
 
-      const res = await axios.put('http://localhost:8000/api/users/profile',
+      const res = await axios.put(`${API_BASE_URL}/api/users/profile`,
         {
           fullName: formData.fullName,
           faculty: formData.faculty,

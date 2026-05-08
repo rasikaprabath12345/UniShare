@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
+import API_BASE_URL from '../../config/api';
 
 /* ── Scoped styles — matches UniShare theme (Navy #0d2257 · Blue #1565C0 · Poppins) ── */
 const styles = `
@@ -525,7 +526,7 @@ export default function Register() {
     try {
       console.log('📝 Submitting registration form...');
       
-      const response = await axios.post('http://localhost:8000/User/register', {
+      const response = await axios.post(`${API_BASE_URL}/User/register`, {
         fullName: formData.fullName.trim(),
         email: formData.email.toLowerCase().trim(),
         password: formData.password,
@@ -575,7 +576,7 @@ export default function Register() {
     try {
       console.log('📧 Verifying OTP...', { email, otp });
       
-      const response = await axios.post('http://localhost:8000/User/verify-email-otp', {
+      const response = await axios.post(`${API_BASE_URL}/User/verify-email-otp`, {
         email: email,
         otp: otp.trim(),
       });
@@ -608,7 +609,7 @@ export default function Register() {
     setOtpError('');
     setResendLoading(true);
     try {
-      await axios.post('http://localhost:8000/User/resend-verification-email', {
+      await axios.post(`${API_BASE_URL}/User/resend-verification-email`, {
         email: email,
       });
       setOtpError(''); // Clear any errors
