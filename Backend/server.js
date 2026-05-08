@@ -51,9 +51,25 @@ app.use("/api/meetings", MeetingRouter);
 app.use("/api/bookmarks", BookmarkRouter);
 app.use("/api/reports", ReportRouter);
 
+// Root route for debugging
+app.get("/", (req, res) => {
+  res.json({ 
+    message: "🎓 UniShare Backend API",
+    version: "1.0.0",
+    status: "Running ✅",
+    docs: "/api/health"
+  });
+});
+
 // Health check route
 app.get("/api/health", (req, res) => {
-  res.status(200).json({ status: "Backend is running ✅" });
+  const dbStatus = isConnected ? "Connected ✅" : "Disconnected ⚠️";
+  res.status(200).json({ 
+    status: "Backend is running ✅",
+    database: dbStatus,
+    environment: process.env.NODE_ENV || "unknown",
+    timestamp: new Date().toISOString()
+  });
 });
 
 // 404 handler for API routes
@@ -75,42 +91,55 @@ app.use((err, req, res, next) => {
 
 // MongoDB Connection - Handle both local and serverless environments
 let isConnected = false;
+let connectionPromise = null;
 
 const connectToMongoDB = async () => {
   if (isConnected) {
     console.log("✅ Using existing MongoDB connection");
-    return;
+    return true;
   }
 
-  try {
-    console.log("🔄 Attempting to connect to MongoDB...");
-    await mongoose.connect(process.env.MONGODB_URI || process.env.MONGO_URI, {
-      serverSelectionTimeoutMS: 8000,
-      family: 4,
-      maxPoolSize: 5,
-      socketTimeoutMS: 30000,
-    });
-    isConnected = true;
-    console.log("✅ Connected to MongoDB");
-  } catch (err) {
-    console.error("❌ MongoDB connection failed:", err.message);
-    isConnected = false;
-    throw new Error("Database connection failed");
+  // Prevent multiple simultaneous connection attempts
+  if (connectionPromise) {
+    return connectionPromise;
   }
+
+  connectionPromise = (async () => {
+    try {
+      const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
+      
+      if (!mongoUri) {
+        console.warn("⚠️  MongoDB URI not configured - running in demo mode");
+        return false;
+      }
+
+      console.log("🔄 Attempting to connect to MongoDB...");
+      await mongoose.connect(mongoUri, {
+        serverSelectionTimeoutMS: 5000,
+        socketTimeoutMS: 10000,
+        maxPoolSize: 5,
+        family: 4,
+      });
+      isConnected = true;
+      console.log("✅ Connected to MongoDB");
+      return true;
+    } catch (err) {
+      console.error("❌ MongoDB connection failed:", err.message);
+      isConnected = false;
+      return false;
+    } finally {
+      connectionPromise = null;
+    }
+  })();
+
+  return connectionPromise;
 };
 
 // Initialize connection on first request (for serverless)
 app.use(async (req, res, next) => {
-  if (!isConnected) {
-    try {
-      await connectToMongoDB();
-    } catch (err) {
-      console.error("Database initialization error:", err.message);
-      return res.status(500).json({
-        success: false,
-        message: "Database connection failed"
-      });
-    }
+  // Try to connect, but don't block if it fails
+  if (!isConnected && !connectionPromise) {
+    await connectToMongoDB();
   }
   next();
 });
