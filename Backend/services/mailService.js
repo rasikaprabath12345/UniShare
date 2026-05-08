@@ -1,4 +1,6 @@
 const nodemailer = require("nodemailer");
+const emailUser = process.env.SENDER_EMAIL || process.env.EMAIL_USER;
+const emailPass = process.env.SENDER_PASSWORD || process.env.EMAIL_PASSWORD;
 
 /**
  * ============================================
@@ -22,8 +24,8 @@ const transporter = nodemailer.createTransport({
   port: 587,
   secure: false, // Use TLS
   auth: {
-    user: process.env.SENDER_EMAIL,
-    pass: process.env.SENDER_PASSWORD, // Must be App Password, not regular password
+    user: emailUser,
+    pass: emailPass, // Must be App Password, not regular password
   },
 });
 
@@ -31,7 +33,7 @@ const transporter = nodemailer.createTransport({
 transporter.verify((error, success) => {
   if (error) {
     console.error("❌ Email transporter verification failed:", error.message);
-    console.log("⚠️  Check SENDER_EMAIL and SENDER_PASSWORD in .env file");
+    console.log("⚠️  Check SENDER_EMAIL/SENDER_PASSWORD or EMAIL_USER/EMAIL_PASSWORD");
     console.log("⚠️  Use Gmail App Password, not your regular password");
   } else {
     console.log("✅ Email transporter is ready to send messages");
@@ -48,17 +50,19 @@ transporter.verify((error, success) => {
  */
 const sendEmail = async (recipientEmail, subject, htmlContent) => {
   try {
-    if (!process.env.SENDER_EMAIL || !process.env.SENDER_PASSWORD) {
-      throw new Error('Email configuration missing: SENDER_EMAIL or SENDER_PASSWORD not set in .env');
+    if (!emailUser || !emailPass) {
+      throw new Error(
+        "Email configuration missing: set SENDER_EMAIL/SENDER_PASSWORD or EMAIL_USER/EMAIL_PASSWORD"
+      );
     }
 
     const mailOptions = {
-      from: `"UniShare" <${process.env.SENDER_EMAIL}>`,
+      from: `"UniShare" <${emailUser}>`,
       to: recipientEmail,
       subject: subject,
       html: htmlContent,
       // Add reply-to for better email handling
-      replyTo: process.env.SENDER_EMAIL,
+      replyTo: emailUser,
     };
 
     console.log(`📧 Sending email to: ${recipientEmail}`);

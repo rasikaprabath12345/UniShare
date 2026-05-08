@@ -15,8 +15,8 @@
   "env": {
     "MONGODB_URI": "@mongodb_uri",
     "JWT_SECRET": "@jwt_secret",
-    "EMAIL_USER": "@email_user",
-    "EMAIL_PASSWORD": "@email_password",
+    "SENDER_EMAIL": "@sender_email",
+    "SENDER_PASSWORD": "@sender_password",
     "FRONTEND_URL": "@frontend_url"
   }
 }
