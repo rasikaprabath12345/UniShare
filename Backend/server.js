@@ -26,11 +26,22 @@ const configuredOrigins = (process.env.FRONTEND_URL || "")
 // If FRONTEND_URL is set, use only that value (or comma-separated values).
 const allowedOrigins = configuredOrigins.length > 0 ? configuredOrigins : defaultOrigins;
 
+const isTrustedPreviewOrigin = (origin) => {
+  if (!origin) return false;
+  try {
+    const hostname = new URL(origin).hostname.toLowerCase();
+    // Allow Vercel/Netlify preview domains used during deployment testing.
+    return hostname.endsWith(".vercel.app") || hostname.endsWith(".netlify.app");
+  } catch (_error) {
+    return false;
+  }
+};
+
 const corsOptions = {
   origin: (origin, callback) => {
     // Allow non-browser clients and same-origin calls
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
+    if (allowedOrigins.includes(origin) || isTrustedPreviewOrigin(origin)) return callback(null, true);
     return callback(new Error("Not allowed by CORS"));
   },
   credentials: true,
