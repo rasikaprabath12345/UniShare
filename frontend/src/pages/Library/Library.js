@@ -3,7 +3,7 @@ import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import ReportModal from "../../components/ReportModal";
 import {
-  Search, Upload, Download, ThumbsUp, Clock, GraduationCap,
+  Search, Upload, Download, Clock, GraduationCap,
   Globe, Lock, Heart, Eye, Trash2, BookOpen, User,
   CheckCircle, X, Flag
 } from "lucide-react";

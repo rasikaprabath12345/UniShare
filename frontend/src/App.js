@@ -30,9 +30,7 @@ import ChangePassword from "./pages/UserManagement/ChangePassword";
 // ── Auth guard ────────────────────────────────────────────────────────────
 import ProtectedRoute from "./components/ProtectedRoute";
 
-// ── Shared layout components (not routed directly) ────────────────────────
-import Navbar from "./components/Navbar";
-import Footer from "./components/Footer";
+// ── Shared layout components (not routed directly — used inside page components) ──
 
 function App() {
   return (
