@@ -4,9 +4,7 @@ import axios from 'axios';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
-
-const API_BASE_URL = (process.env.REACT_APP_API_URL || 'http://localhost:8000').replace(/\/+$/, '');
-const LOCAL_BACKEND_ORIGIN = 'http://localhost:8000';
+import API_BASE_URL, { LOCAL_BACKEND_ORIGIN } from './config/api';
 
 const rewriteApiUrl = (value) => {
   if (typeof value !== 'string') return value;
