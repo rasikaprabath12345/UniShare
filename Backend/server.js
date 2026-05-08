@@ -7,8 +7,20 @@ const path = require("path");
 
 const app = express();
 
+// CORS Configuration - Allow your Netlify frontend
+const corsOptions = {
+  origin: process.env.FRONTEND_URL || [
+    "http://localhost:3000",
+    "https://unishare-platform.netlify.app", // Your Netlify frontend URL
+    "https://uni-share-theta.vercel.app" // Your Vercel backend URL
+  ],
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+};
+
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -39,28 +51,17 @@ app.use("/api/meetings", MeetingRouter);
 app.use("/api/bookmarks", BookmarkRouter);
 app.use("/api/reports", ReportRouter);
 
-// Serve frontend build files
-const frontendBuildPath = path.join(__dirname, "../frontend/build");
-app.use(express.static(frontendBuildPath));
-
-// Test Route
-app.get("/", (req, res) => {
-  res.sendFile(path.join(frontendBuildPath, "index.html"));
+// Health check route
+app.get("/api/health", (req, res) => {
+  res.status(200).json({ status: "Backend is running ✅" });
 });
 
-// Serve frontend for all other routes (SPA fallback)
-app.get("*", (req, res) => {
-  // Don't serve index.html for API routes that already exist
-  if (req.url.startsWith("/api") || req.url.startsWith("/Feedback") || 
-      req.url.startsWith("/quiz") || req.url.startsWith("/Materials") ||
-      req.url.startsWith("/User") || req.url.startsWith("/Forum") ||
-      req.url.startsWith("/uploads")) {
-    return res.status(404).json({
-      success: false,
-      message: `Route not found: ${req.method} ${req.originalUrl}`
-    });
-  }
-  res.sendFile(path.join(frontendBuildPath, "index.html"));
+// 404 handler for API routes
+app.use("/api", (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `API Route not found: ${req.method} ${req.originalUrl}`
+  });
 });
 
 // Global error handler
@@ -72,26 +73,63 @@ app.use((err, req, res, next) => {
   });
 });
 
-// MongoDB Connection
-const connectWithRetry = () => {
-  console.log("Attempting to connect to MongoDB...");
+// MongoDB Connection - Handle both local and serverless environments
+let isConnected = false;
 
-  mongoose.connect(process.env.MONGO_URI, {
-    serverSelectionTimeoutMS: 8000,
-    family: 4,
-  })
-  .then(() => {
-    console.log("✅ Connected to MongoDB");
+const connectToMongoDB = async () => {
+  if (isConnected) {
+    console.log("✅ Using existing MongoDB connection");
+    return;
+  }
 
-    app.listen(process.env.PORT || 8000, () => {
-      console.log(`🚀 Server running on port ${process.env.PORT}`);
+  try {
+    console.log("🔄 Attempting to connect to MongoDB...");
+    await mongoose.connect(process.env.MONGODB_URI || process.env.MONGO_URI, {
+      serverSelectionTimeoutMS: 8000,
+      family: 4,
+      maxPoolSize: 5,
+      socketTimeoutMS: 30000,
     });
-  })
-  .catch((err) => {
+    isConnected = true;
+    console.log("✅ Connected to MongoDB");
+  } catch (err) {
     console.error("❌ MongoDB connection failed:", err.message);
-    console.log("Retrying in 8 seconds...");
-    setTimeout(connectWithRetry, 8000);
-  });
+    isConnected = false;
+    throw new Error("Database connection failed");
+  }
 };
 
-connectWithRetry();
+// Initialize connection on first request (for serverless)
+app.use(async (req, res, next) => {
+  if (!isConnected) {
+    try {
+      await connectToMongoDB();
+    } catch (err) {
+      console.error("Database initialization error:", err.message);
+      return res.status(500).json({
+        success: false,
+        message: "Database connection failed"
+      });
+    }
+  }
+  next();
+});
+
+// Export app for Vercel serverless
+module.exports = app;
+
+// Local server startup (only for development)
+if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
+  const PORT = process.env.PORT || 8000;
+  
+  connectToMongoDB()
+    .then(() => {
+      app.listen(PORT, () => {
+        console.log(`🚀 Server running locally on port ${PORT}`);
+      });
+    })
+    .catch((err) => {
+      console.error("Failed to start local server:", err);
+      process.exit(1);
+    });
+}
