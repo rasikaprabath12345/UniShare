@@ -1,4 +1,3 @@
-const fs = require("fs");
 const Material = require("../models/Material");
 
 // ── POST /Materials ── Upload PDF + save record
@@ -38,9 +37,9 @@ const createMaterial = async (req, res) => {
       }
     }
 
-    // Use environment variable for backend URL, fallback to request origin for local dev
-    const backendUrl = process.env.BACKEND_URL || `${req.protocol}://${req.get("host")}`;
-    const fileUrl = `${backendUrl}/uploads/${req.file.filename}`;
+    // Get Cloudinary URL from file object
+    // req.file.path contains the secure Cloudinary URL from multer-storage-cloudinary
+    const fileUrl = req.file.path || req.file.location;
 
     const material = await Material.create({
       user: userId, // ✅ manually assign
@@ -61,7 +60,7 @@ const createMaterial = async (req, res) => {
     });
 
   } catch (err) {
-    if (req.file) fs.unlink(req.file.path, () => {});
+    // No need to manually delete files from Cloudinary - handled automatically
     res.status(500).json({
       success: false,
       message: err.message,
@@ -168,10 +167,8 @@ const deleteMaterial = async (req, res) => {
     }
 
     // ❗ NO SECURITY (anyone can delete)
-    const filename = material.fileUrl.split("/uploads/")[1];
-    if (filename) {
-      fs.unlink(`uploads/${filename}`, () => {});
-    }
+    // Note: Cloudinary files are automatically handled - no need to manually delete
+    // The file stays in Cloudinary but the reference is removed from MongoDB
 
     await material.deleteOne();
 

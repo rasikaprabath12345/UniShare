@@ -73,14 +73,27 @@ const generateQuiz = async (req, res) => {
     const material = await Material.findById(materialId);
     if (!material) return jsonError(res, 404, "Material not found");
 
-    const filename = material.fileUrl.split("/uploads/")[1];
-    const filePath = path.join("uploads", filename);
-
-    if (!fs.existsSync(filePath)) {
-      return jsonError(res, 404, "PDF not found");
+    // Get PDF from Cloudinary URL instead of local filesystem
+    const pdfUrl = material.fileUrl;
+    if (!pdfUrl) {
+      return jsonError(res, 404, "PDF URL not found");
     }
 
-    const buffer = fs.readFileSync(filePath);
+    // Fetch PDF from Cloudinary using https
+    let buffer;
+    try {
+      buffer = await new Promise((resolve, reject) => {
+        https.get(pdfUrl, (response) => {
+          const chunks = [];
+          response.on('data', (chunk) => chunks.push(chunk));
+          response.on('end', () => resolve(Buffer.concat(chunks)));
+          response.on('error', reject);
+        }).on('error', reject);
+      });
+    } catch (err) {
+      return jsonError(res, 500, `Failed to fetch PDF: ${err.message}`);
+    }
+
     const data = await pdfParse(buffer);
     const pdfText = (data.text || "").slice(0, 6000).trim();
 

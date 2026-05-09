@@ -1290,9 +1290,9 @@ exports.updateProfilePicture = async (req, res) => {
       return res.status(400).json({ message: "Profile picture file is required" });
     }
 
-    // Use environment variable for backend URL, fallback to request origin for local dev
-    const backendUrl = process.env.BACKEND_URL || `${req.protocol}://${req.get("host")}`;
-    const profilePictureUrl = `${backendUrl}/uploads/${req.file.filename}`;
+    // Get Cloudinary URL from file object
+    // req.file.path contains the secure Cloudinary URL from multer-storage-cloudinary
+    const profilePictureUrl = req.file.path || req.file.location;
 
     const user = await User.findByIdAndUpdate(
       userId,
