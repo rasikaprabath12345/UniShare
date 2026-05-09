@@ -10,6 +10,17 @@ const uploadImage = require("../middleware/uploadImage");
 // ════════════════════════════════════════════════════════════════════════
 
 // ──────────────────────────────────────────────────────────────────────
+// ✅ PREFLIGHT OPTIONS HANDLER - Allow CORS preflight for all routes
+// ──────────────────────────────────────────────────────────────────────
+router.options('*', (req, res) => {
+  res.header('Access-Control-Allow-Origin', req.get('Origin') || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.sendStatus(200);
+});
+
+// ──────────────────────────────────────────────────────────────────────
 // POST ROUTES
 // ──────────────────────────────────────────────────────────────────────
 router.post('/register', userController.registerUser);

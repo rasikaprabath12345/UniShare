@@ -3,8 +3,17 @@ const jwt = require('jsonwebtoken');
 /**
  * Authentication Middleware
  * Verifies JWT token from Authorization header
+ * 
+ * ⭐ IMPORTANT: Allows OPTIONS requests (preflight) to bypass auth
+ * This prevents CORS preflight requests from being blocked by auth
  */
 exports.verifyToken = (req, res, next) => {
+  // ✅ Allow OPTIONS requests to bypass authentication
+  // Browser sends OPTIONS before POST/PUT/DELETE for CORS preflight
+  if (req.method === 'OPTIONS') {
+    return next();
+  }
+
   try {
     const token = req.headers.authorization?.split(' ')[1]; // Extract token from "Bearer <token>"
 
