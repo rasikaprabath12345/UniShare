@@ -7,14 +7,14 @@ body { font-family: 'Poppins', sans-serif; }
    TOAST
 ═══════════════════════════════════════════════════════ */
 .lib-toast {
-  position: fixed; top: 80px; right: 24px; z-index: 9999;
-  display: flex; align-items: center; gap: 10px;
-  padding: 13px 18px;
-  border-radius: 12px;
-  font-size: 0.83rem; font-weight: 600;
+  position: fixed; top: clamp(50px, 8vw, 80px); right: clamp(12px, 4vw, 24px); z-index: 9999;
+  display: flex; align-items: center; gap: clamp(8px, 2vw, 10px);
+  padding: clamp(10px, 2.5vw, 13px) clamp(12px, 3vw, 18px);
+  border-radius: clamp(8px, 2vw, 12px);
+  font-size: clamp(0.75rem, 2vw, 0.83rem); font-weight: 600;
   box-shadow: 0 8px 32px rgba(0,0,0,0.16);
   animation: toastSlide 0.35s cubic-bezier(.22,.68,0,1.2) both;
-  max-width: 360px;
+  max-width: 90vw;
 }
 .lib-toast-success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
 .lib-toast-error   { background: #fff5f5; color: #991b1b; border: 1px solid #fecaca; }
@@ -40,24 +40,24 @@ body { font-family: 'Poppins', sans-serif; }
   animation: overlayFadeIn 0.2s ease;
 }
 .lib-delete-modal {
-  background: white; border-radius: 20px;
-  padding: 36px 32px 28px;
+  background: white; border-radius: clamp(16px, 4vw, 20px);
+  padding: clamp(20px, 5vw, 36px) clamp(16px, 4vw, 32px) clamp(16px, 4vw, 28px);
   max-width: 380px; width: 100%;
   text-align: center;
   box-shadow: 0 20px 60px rgba(0,0,0,0.22);
   animation: modalSlideUp 0.3s cubic-bezier(.22,.68,0,1.2);
 }
 .lib-delete-icon {
-  width: 56px; height: 56px; border-radius: 50%;
+  width: clamp(44px, 12vw, 56px); height: clamp(44px, 12vw, 56px); border-radius: 50%;
   background: #fff5f5; color: #e84545;
   display: flex; align-items: center; justify-content: center;
-  margin: 0 auto 16px;
+  margin: 0 auto clamp(10px, 2.5vw, 16px);
 }
 .lib-delete-title {
-  font-size: 1.1rem; font-weight: 800; color: #0d2257; margin-bottom: 8px;
+  font-size: clamp(0.95rem, 3vw, 1.1rem); font-weight: 800; color: #0d2257; margin-bottom: clamp(6px, 1.5vw, 8px);
 }
 .lib-delete-sub {
-  font-size: 0.83rem; color: #666; line-height: 1.6; margin-bottom: 24px;
+  font-size: clamp(0.75rem, 2.5vw, 0.83rem); color: #666; line-height: 1.6; margin-bottom: clamp(16px, 4vw, 24px);
 }
 .lib-delete-sub strong { color: #0d2257; }
 .lib-delete-actions { display: flex; gap: 10px; }
@@ -93,8 +93,8 @@ body { font-family: 'Poppins', sans-serif; }
 }
 .upload-modal-inner {
   width: 100%; max-width: 820px;
-  height: calc(100vh - 32px); max-height: 960px;
-  overflow-y: auto; border-radius: 24px;
+  height: clamp(60vh, 90vh, 960px); max-height: 90vh;
+  overflow-y: auto; border-radius: clamp(16px, 4vw, 24px);
   animation: modalSlideUp 0.35s cubic-bezier(.22,.68,0,1.2) both;
   scrollbar-width: none;
 }
@@ -111,7 +111,7 @@ body { font-family: 'Poppins', sans-serif; }
 ═══════════════════════════════════════════════════════ */
 .lib-hero {
   position: relative;
-  height: 520px;
+  height: clamp(300px, 60vh, 520px);
   display: flex;
   align-items: center;
   overflow: hidden;
@@ -137,11 +137,11 @@ body { font-family: 'Poppins', sans-serif; }
 /* Left-side content column */
 .lib-hero-content {
   position: relative; z-index: 2;
-  padding: 0 60px;
+  padding: 0 clamp(20px, 8vw, 60px);
   max-width: 560px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: clamp(12px, 3vw, 16px);
 }
 
 /* Hero stat chips */

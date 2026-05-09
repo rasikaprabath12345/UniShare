@@ -1,10 +1,7 @@
 /* Report Modal Overlay */
 .report-modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background-color: rgba(13, 34, 87, 0.45);
   backdrop-filter: blur(3px);
   display: flex;
@@ -12,8 +9,10 @@
   justify-content: center;
   z-index: 9999;
   animation: fadeIn 0.2s ease-out;
-  padding: 20px;
+  padding: clamp(12px, 4vw, 20px);
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
 }
 
 @keyframes fadeIn {
@@ -42,12 +41,14 @@
   border-radius: 16px;
   box-shadow: 0 20px 60px rgba(13, 34, 87, 0.25);
   max-width: 550px;
-  width: 90%;
+  width: 100%;
   display: flex;
   flex-direction: column;
   animation: slideUp 0.25s ease;
   margin: auto;
   overflow: hidden;
+  max-height: 90dvh;
+  overflow-y: auto;
 }
 
 /* Header */
@@ -55,25 +56,26 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding: 22px 28px 18px;
+  padding: clamp(16px, 3vw, 22px) clamp(20px, 4vw, 28px) clamp(14px, 2vw, 18px);
   border-bottom: 1px solid #f0f4ff;
   background: white;
   color: #0d2257;
   border-radius: 16px 16px 0 0;
   flex-shrink: 0;
+  gap: clamp(8px, 2vw, 16px);
 }
 
 .report-modal-header h2 {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: clamp(0.9rem, 3vw, 1.05rem);
   font-weight: 800;
   color: #0d2257;
   letter-spacing: -0.5px;
 }
 
 .report-modal-subtitle {
-  margin: 6px 0 0 0;
-  font-size: 0.73rem;
+  margin: clamp(4px, 1vw, 6px) 0 0 0;
+  font-size: clamp(0.65rem, 1.5vw, 0.73rem);
   color: #aaa;
   font-weight: 500;
   word-break: break-word;
@@ -83,7 +85,7 @@
   background: #f4f7ff;
   border: none;
   color: #888;
-  padding: 8px;
+  padding: clamp(6px, 1.5vw, 8px);
   border-radius: 8px;
   cursor: pointer;
   display: flex;
@@ -91,9 +93,9 @@
   justify-content: center;
   transition: all 0.18s;
   flex-shrink: 0;
-  margin-left: 16px;
-  width: 32px;
-  height: 32px;
+  margin-left: 0;
+  min-width: 44px;
+  min-height: 44px;
 }
 
 .report-modal-close:hover {
@@ -104,38 +106,40 @@
 /* Success State */
 .report-success {
   text-align: center;
-  padding: 30px 20px;
+  padding: clamp(20px, 4vw, 30px);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: clamp(8px, 2vw, 12px);
 }
 
 .success-icon {
   color: #0f6e56;
   animation: slideUp 0.4s ease-out;
+  width: clamp(48px, 10vw, 64px);
+  height: clamp(48px, 10vw, 64px);
 }
 
 .report-success h2 {
   color: #0d2257;
   margin: 0;
-  font-size: 1.1rem;
+  font-size: clamp(0.95rem, 3vw, 1.1rem);
   font-weight: 800;
 }
 
 .report-success p {
   color: #666;
   margin: 0;
-  font-size: 0.82rem;
+  font-size: clamp(0.75rem, 2vw, 0.82rem);
   line-height: 1.6;
 }
 
 /* Form */
 .report-modal-form {
-  padding: 22px 28px;
+  padding: clamp(16px, 3vw, 22px) clamp(20px, 4vw, 28px);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: clamp(12px, 2.5vw, 16px);
   background: white;
 }
 
@@ -143,25 +147,27 @@
 .report-error {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: clamp(8px, 2vw, 12px);
   background-color: #fce8ef;
   color: #993556;
-  padding: 12px 14px;
+  padding: clamp(10px, 2vw, 12px) clamp(10px, 2vw, 14px);
   border-radius: 10px;
-  font-size: 0.73rem;
+  font-size: clamp(0.68rem, 1.5vw, 0.73rem);
   font-weight: 600;
   border: 1px solid #f5c2cf;
 }
 
 .report-error svg {
   flex-shrink: 0;
+  width: clamp(18px, 4vw, 20px);
+  height: clamp(18px, 4vw, 20px);
 }
 
 /* Form Group */
 .report-form-group {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: clamp(8px, 1.5vw, 10px);
 }
 
 .report-form-label {
@@ -170,34 +176,38 @@
   align-items: center;
   font-weight: 700;
   color: #0d2257;
-  font-size: 0.8rem;
+  font-size: clamp(0.7rem, 1.5vw, 0.8rem);
   text-transform: none;
   letter-spacing: 0;
+  flex-wrap: wrap;
+  gap: clamp(6px, 1vw, 8px);
 }
 
 .report-char-count {
   font-weight: 500;
   color: #aaa;
-  font-size: 0.68rem;
+  font-size: clamp(0.63rem, 1vw, 0.68rem);
   text-transform: none;
 }
 
 /* Reasons Grid */
 .report-reasons-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+  gap: clamp(8px, 2vw, 10px);
 }
 
 .report-reason-option {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 11px 13px;
+  gap: clamp(8px, 1.5vw, 10px);
+  padding: clamp(9px, 2vw, 11px) clamp(10px, 2vw, 13px);
   border: 1.5px solid #e8f0fe;
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.18s;
+  min-height: 44px;
+}
   background-color: #f8faff;
   font-size: 0.73rem;
   font-weight: 500;

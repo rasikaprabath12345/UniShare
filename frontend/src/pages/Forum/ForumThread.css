@@ -7,23 +7,25 @@ html {
 .thread-container {
   max-width: 900px;
   margin: 0 auto;
-  padding: 2rem 1.5rem 3rem;
+  padding: clamp(1rem, 4vw, 2rem) clamp(0.75rem, 4vw, 1.5rem) clamp(1.5rem, 5vw, 3rem);
 }
 
 .thread-back-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 16px;
+  padding: clamp(6px, 1.5vw, 8px) clamp(12px, 3vw, 16px);
   background: #f3f4f6;
   border: 0.5px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: clamp(6px, 1.5vw, 8px);
   color: #374151;
-  font-size: 13px;
+  font-size: clamp(0.75rem, 2.5vw, 0.875rem);
   font-weight: 500;
   cursor: pointer;
   transition: background 0.15s;
-  margin-bottom: 1.5rem;
+  margin-bottom: clamp(0.75rem, 3vw, 1.5rem);
+  min-height: 36px;
+  min-width: 36px;
 }
 
 .thread-back-btn:hover {
@@ -35,40 +37,40 @@ html {
 .thread-main-card {
   background: #fff;
   border: 0.5px solid #e5e7eb;
-  border-radius: 16px;
-  padding: 2rem;
-  margin-bottom: 1.5rem;
+  border-radius: clamp(12px, 3vw, 16px);
+  padding: clamp(1rem, 4vw, 2rem);
+  margin-bottom: clamp(0.75rem, 3vw, 1.5rem);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
 }
 
 .thread-header {
-  margin-bottom: 1.5rem;
-  padding-bottom: 1.5rem;
+  margin-bottom: clamp(0.75rem, 3vw, 1.5rem);
+  padding-bottom: clamp(0.75rem, 3vw, 1.5rem);
   border-bottom: 1px solid #f3f4f6;
 }
 
 .thread-header-top {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: clamp(6px, 2vw, 8px);
   flex-wrap: wrap;
-  margin-bottom: 1rem;
+  margin-bottom: clamp(0.5rem, 2vw, 1rem);
 }
 
 .thread-category-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12px;
+  gap: clamp(4px, 1vw, 6px);
+  font-size: clamp(0.75rem, 2vw, 0.875rem);
   font-weight: 600;
-  padding: 6px 14px;
+  padding: clamp(4px, 1.5vw, 6px) clamp(10px, 2vw, 14px);
   border-radius: 20px;
   border: 0.5px solid;
 }
 
 .thread-tags {
   display: flex;
-  gap: 6px;
+  gap: clamp(4px, 1.5vw, 6px);
   flex-wrap: wrap;
 }
 
@@ -76,18 +78,18 @@ html {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 11px;
+  font-size: clamp(0.70rem, 1.8vw, 0.875rem);
   color: #6b7280;
   background: #f3f4f6;
   border-radius: 20px;
-  padding: 4px 10px;
+  padding: clamp(3px, 1vw, 4px) clamp(8px, 2vw, 10px);
 }
 
 .thread-main-title {
-  font-size: 1.875rem;
+  font-size: clamp(1.3rem, 5vw, 1.875rem);
   font-weight: 700;
   color: #111827;
-  margin: 0 0 1rem;
+  margin: 0 0 clamp(0.5rem, 2vw, 1rem);
   line-height: 1.3;
 }
 
@@ -96,29 +98,30 @@ html {
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: clamp(0.5rem, 2vw, 1rem);
 }
 
 .thread-author-info {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: clamp(8px, 2vw, 12px);
 }
 
 .thread-author-avatar {
-  width: 48px;
-  height: 48px;
+  width: clamp(36px, 10vw, 48px);
+  height: clamp(36px, 10vw, 48px);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-size: 18px;
+  font-size: clamp(0.9rem, 2.5vw, 1.125rem);
   font-weight: 600;
+  flex-shrink: 0;
 }
 
 .thread-author-name {
-  font-size: 14px;
+  font-size: clamp(0.85rem, 2.5vw, 0.95rem);
   font-weight: 600;
   color: #111827;
 }
@@ -126,78 +129,81 @@ html {
 .thread-meta-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 4px;
+  gap: clamp(6px, 1.5vw, 8px);
+  margin-top: clamp(2px, 0.5vw, 4px);
 }
 
 .thread-author-year {
-  font-size: 12px;
+  font-size: clamp(0.75rem, 1.8vw, 0.85rem);
   color: #6b7280;
   background: #f3f4f6;
   border-radius: 20px;
-  padding: 2px 8px;
+  padding: clamp(1px, 0.5vw, 2px) clamp(6px, 1.5vw, 8px);
 }
 
 .thread-time {
-  font-size: 12px;
+  font-size: clamp(0.75rem, 1.8vw, 0.85rem);
   color: #9ca3af;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: clamp(2px, 1vw, 4px);
 }
 
 .thread-stats-row {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: clamp(12px, 3vw, 16px);
+  flex-wrap: wrap;
 }
 
 .thread-stat {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 13px;
+  gap: clamp(4px, 1.5vw, 6px);
+  font-size: clamp(0.80rem, 2.5vw, 0.875rem);
   color: #6b7280;
 }
 
 .thread-body-content {
-  padding: 1.5rem 0;
+  padding: clamp(0.75rem, 3vw, 1.5rem) 0;
 }
 
 .thread-body-content p {
-  font-size: 15px;
+  font-size: clamp(0.9rem, 2.5vw, 1rem);
   line-height: 1.7;
   color: #374151;
   margin: 0;
   white-space: pre-wrap;
+  word-break: break-word;
 }
 
 /* ── Reactions Section ────────────────────────────────────────────────────── */
 
 .thread-reactions-section {
-  padding-top: 1.5rem;
+  padding-top: clamp(0.75rem, 2vw, 1.5rem);
   border-top: 1px solid #f3f4f6;
 }
 
 .reactions-bar {
   display: flex;
-  gap: 8px;
+  gap: clamp(6px, 2vw, 8px);
   flex-wrap: wrap;
 }
 
 .reaction-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
+  gap: clamp(4px, 1.5vw, 6px);
+  padding: clamp(6px, 1.5vw, 8px) clamp(10px, 2vw, 14px);
   background: #f9fafb;
   border: 1px solid #e5e7eb;
   border-radius: 20px;
   color: #6b7280;
-  font-size: 13px;
+  font-size: clamp(0.80rem, 2.5vw, 0.875rem);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
+  min-height: 36px;
 }
 
 .reaction-btn:hover {
@@ -212,11 +218,11 @@ html {
 }
 
 .reaction-count {
-  font-size: 12px;
+  font-size: clamp(0.75rem, 1.8vw, 0.85rem);
   background: #e5e7eb;
   border-radius: 12px;
-  padding: 1px 6px;
-  margin-left: 2px;
+  padding: 1px clamp(4px, 1.5vw, 6px);
+  margin-left: clamp(1px, 1vw, 2px);
 }
 
 .reaction-btn.active .reaction-count {
@@ -229,58 +235,59 @@ html {
 .thread-comments-section {
   background: #fff;
   border: 0.5px solid #e5e7eb;
-  border-radius: 16px;
-  padding: 1.5rem;
+  border-radius: clamp(12px, 3vw, 16px);
+  padding: clamp(1rem, 3vw, 1.5rem);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
 }
 
 .comments-title {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 1.25rem;
+  gap: clamp(6px, 1.5vw, 8px);
+  font-size: clamp(1rem, 3.5vw, 1.25rem);
   font-weight: 600;
   color: #111827;
-  margin: 0 0 1.5rem;
+  margin: 0 0 clamp(0.75rem, 3vw, 1.5rem);
 }
 
 .add-comment-form {
   background: #f9fafb;
   border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 1rem;
-  margin-bottom: 1.5rem;
+  border-radius: clamp(8px, 2vw, 12px);
+  padding: clamp(0.75rem, 2vw, 1rem);
+  margin-bottom: clamp(0.75rem, 3vw, 1.5rem);
 }
 
 .comment-input-wrapper {
   display: flex;
-  gap: 12px;
-  margin-bottom: 12px;
+  gap: clamp(8px, 2vw, 12px);
+  margin-bottom: clamp(8px, 2vw, 12px);
+  flex-wrap: wrap;
 }
 
 .comment-user-avatar {
-  width: 36px;
-  height: 36px;
+  width: clamp(30px, 8vw, 36px);
+  height: clamp(30px, 8vw, 36px);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-size: 14px;
+  font-size: clamp(0.8rem, 2vw, 0.95rem);
   font-weight: 600;
   flex-shrink: 0;
 }
 
 .comment-input {
   flex: 1;
-  padding: 10px 14px;
+  padding: clamp(8px, 2vw, 10px) clamp(10px, 2vw, 14px);
   border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-size: 14px;
+  border-radius: clamp(6px, 1.5vw, 8px);
+  font-size: clamp(0.85rem, 2.5vw, 0.95rem);
   color: #111827;
   font-family: inherit;
   resize: vertical;
-  min-height: 80px;
+  min-height: clamp(60px, 15vw, 80px);
   outline: none;
   transition: border-color 0.15s;
 }
@@ -294,27 +301,33 @@ html {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-left: 48px;
+  padding-left: clamp(0, 5vw, 48px);
+  gap: clamp(6px, 2vw, 12px);
+  flex-wrap: wrap;
 }
 
 .comment-counter {
-  font-size: 12px;
+  font-size: clamp(0.75rem, 2vw, 0.85rem);
   color: #9ca3af;
+  order: 2;
 }
 
 .comment-submit-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 18px;
+  gap: clamp(4px, 1.5vw, 6px);
+  padding: clamp(6px, 1.5vw, 8px) clamp(12px, 2vw, 18px);
   background: linear-gradient(135deg, #1a3a6e, #185fa5);
   border: none;
-  border-radius: 8px;
+  border-radius: clamp(6px, 1.5vw, 8px);
   color: #fff;
-  font-size: 13px;
+  font-size: clamp(0.80rem, 2.5vw, 0.875rem);
   font-weight: 600;
   cursor: pointer;
   transition: opacity 0.2s, transform 0.2s;
+  min-height: 36px;
+  min-width: 36px;
+  order: 1;
 }
 
 .comment-submit-btn:hover:not(:disabled) {
@@ -353,11 +366,11 @@ html {
 
 .comment-card {
   display: flex;
-  gap: 12px;
-  padding: 1rem;
+  gap: clamp(8px, 2vw, 12px);
+  padding: clamp(0.75rem, 2vw, 1rem);
   background: #f9fafb;
   border: 1px solid #f3f4f6;
-  border-radius: 12px;
+  border-radius: clamp(8px, 2vw, 12px);
   transition: background 0.15s;
 }
 
@@ -366,14 +379,14 @@ html {
 }
 
 .comment-avatar {
-  width: 36px;
-  height: 36px;
+  width: clamp(30px, 8vw, 36px);
+  height: clamp(30px, 8vw, 36px);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-size: 14px;
+  font-size: clamp(0.8rem, 2vw, 0.95rem);
   font-weight: 600;
   flex-shrink: 0;
 }
@@ -386,31 +399,31 @@ html {
 .comment-header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: clamp(6px, 1.5vw, 8px);
   flex-wrap: wrap;
-  margin-bottom: 6px;
+  margin-bottom: clamp(3px, 1vw, 6px);
 }
 
 .comment-author {
-  font-size: 13px;
+  font-size: clamp(0.80rem, 2.5vw, 0.875rem);
   font-weight: 600;
   color: #111827;
 }
 
 .comment-year {
-  font-size: 11px;
+  font-size: clamp(0.70rem, 1.8vw, 0.80rem);
   color: #6b7280;
   background: #e5e7eb;
   border-radius: 20px;
-  padding: 2px 8px;
+  padding: clamp(1px, 0.5vw, 2px) clamp(6px, 1.5vw, 8px);
 }
 
 .comment-time {
-  font-size: 11px;
+  font-size: clamp(0.70rem, 1.8vw, 0.80rem);
   color: #9ca3af;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: clamp(2px, 1vw, 4px);
   margin-left: auto;
 }
 
@@ -419,11 +432,13 @@ html {
   border: none;
   color: #9ca3af;
   cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
+  padding: clamp(2px, 1vw, 4px);
+  border-radius: clamp(2px, 0.5vw, 4px);
   display: flex;
   align-items: center;
   transition: all 0.2s;
+  min-height: 32px;
+  min-width: 32px;
 }
 
 .comment-delete-btn:hover {
@@ -432,32 +447,35 @@ html {
 }
 
 .comment-text {
-  font-size: 14px;
+  font-size: clamp(0.85rem, 2.5vw, 0.95rem);
   line-height: 1.6;
   color: #374151;
   margin: 0;
   white-space: pre-wrap;
+  word-break: break-word;
 }
 
 /* ── Thread Action Buttons ───────────────────────────────────────────────── */
 
 .thread-actions {
   display: flex;
-  gap: 8px;
+  gap: clamp(6px, 1.5vw, 8px);
   margin-left: auto;
+  flex-wrap: wrap;
 }
 
 .thread-action-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  border-radius: 6px;
+  gap: clamp(4px, 1.5vw, 6px);
+  padding: clamp(6px, 1.5vw, 8px) clamp(8px, 2vw, 12px);
+  border-radius: clamp(4px, 1.5vw, 6px);
   border: 1px solid;
-  font-size: 13px;
+  font-size: clamp(0.80rem, 2.5vw, 0.875rem);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
+  min-height: 36px;
 }
 
 .thread-action-btn.edit-btn {
@@ -491,13 +509,14 @@ html {
   align-items: center;
   justify-content: center;
   min-height: 60vh;
-  gap: 1rem;
+  gap: clamp(0.5rem, 3vw, 1rem);
   color: #6b7280;
+  padding: clamp(1rem, 4vw, 2rem);
 }
 
 .thread-spinner {
-  width: 40px;
-  height: 40px;
+  width: clamp(32px, 8vw, 40px);
+  height: clamp(32px, 8vw, 40px);
   border: 3px solid #f3f4f6;
   border-top-color: #378add;
   border-radius: 50%;
@@ -511,32 +530,35 @@ html {
 .thread-error h2 {
   color: #111827;
   margin: 0;
+  font-size: clamp(1.1rem, 4vw, 1.5rem);
 }
 
 .thread-error button {
-  padding: 8px 18px;
+  padding: clamp(6px, 1.5vw, 8px) clamp(12px, 2vw, 18px);
   background: #185fa5;
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: clamp(6px, 1.5vw, 8px);
   cursor: pointer;
-  font-size: 14px;
+  font-size: clamp(0.80rem, 2.5vw, 0.95rem);
   font-weight: 500;
+  min-height: 40px;
 }
 
-/* ── Responsive ───────────────────────────────────────────────────────────── */
+/* ── Mobile Responsive Improvements ───────────────────────────────────────── */
 
 @media (max-width: 768px) {
   .thread-container {
-    padding: 1.5rem 1rem 2rem;
+    padding: clamp(0.75rem, 3vw, 1.5rem) clamp(0.5rem, 3vw, 1rem) clamp(1rem, 4vw, 2rem);
   }
 
-  .thread-main-card {
-    padding: 1.5rem;
+  .thread-main-card,
+  .thread-comments-section {
+    padding: clamp(0.75rem, 3vw, 1.5rem);
   }
 
   .thread-main-title {
-    font-size: 1.5rem;
+    font-size: clamp(1.2rem, 4.5vw, 1.5rem);
   }
 
   .thread-meta {
@@ -550,8 +572,70 @@ html {
 
   .comment-form-footer {
     padding-left: 0;
-    flex-direction: column;
+    flex-direction: column-reverse;
     align-items: flex-end;
-    gap: 8px;
+  }
+  
+  .comment-form-footer .comment-counter {
+    order: 1;
+    align-self: flex-start;
+  }
+}
+
+@media (max-width: 600px) {
+  .thread-container {
+    padding: clamp(0.5rem, 2.5vw, 1rem) clamp(0.4rem, 2.5vw, 0.8rem) clamp(0.8rem, 3vw, 1.5rem);
+  }
+
+  .thread-back-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .thread-author-info {
+    width: 100%;
+  }
+
+  .thread-meta-row {
+    width: 100%;
+  }
+
+  .thread-actions {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .comment-input-wrapper {
+    flex-direction: column-reverse;
+  }
+
+  .comment-user-avatar {
+    align-self: flex-end;
+  }
+
+  .comment-form-footer {
+    width: 100%;
+    padding-left: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .thread-container {
+    padding: clamp(0.4rem, 2vw, 0.8rem) clamp(0.3rem, 2vw, 0.6rem) clamp(0.6rem, 2.5vw, 1rem);
+  }
+
+  .thread-stats-row {
+    width: 100%;
+    gap: clamp(8px, 2vw, 12px);
+  }
+
+  .thread-actions {
+    width: 100%;
+    gap: clamp(4px, 1.5vw, 6px);
+  }
+
+  .comment-form-footer {
+    width: 100%;
+    gap: clamp(4px, 1.5vw, 6px);
   }
 }
