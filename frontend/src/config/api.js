@@ -1,6 +1,6 @@
 export const LOCAL_BACKEND_ORIGIN = "http://localhost:8000";
 const PRODUCTION_BACKEND_ORIGIN =
-  "https://uni-share-6t19jmwt2-rasikaprabath8694-1789s-projects.vercel.app";
+  "https://uni-share-7j13.vercel.app";;
 
 // Use local backend for development, or set REACT_APP_API_URL environment variable for production
 const resolvedApiBase =
