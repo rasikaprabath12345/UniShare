@@ -16,6 +16,7 @@ const defaultOrigins = [
   "http://localhost:3000",
   "https://unishare-platform.netlify.app",
   "https://uni-share-theta.vercel.app",
+  "https://uni-share-spln.vercel.app",
 ];
 
 const configuredOrigins = (process.env.FRONTEND_URL || "")
