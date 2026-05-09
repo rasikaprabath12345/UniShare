@@ -47,7 +47,7 @@ const corsOptions = {
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: ["Content-Type", "Authorization", "x-user-id"],
   preflightContinue: false,
   optionsSuccessStatus: 200 // For legacy browsers that choke on 204
 };
@@ -62,7 +62,7 @@ app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', origin);
   }
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-user-id');
   res.header('Access-Control-Allow-Credentials', 'true');
   
   // Handle OPTIONS preflight

@@ -38,7 +38,9 @@ const createMaterial = async (req, res) => {
       }
     }
 
-    const fileUrl = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
+    // Use environment variable for backend URL, fallback to request origin for local dev
+    const backendUrl = process.env.BACKEND_URL || `${req.protocol}://${req.get("host")}`;
+    const fileUrl = `${backendUrl}/uploads/${req.file.filename}`;
 
     const material = await Material.create({
       user: userId, // ✅ manually assign

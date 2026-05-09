@@ -1290,8 +1290,9 @@ exports.updateProfilePicture = async (req, res) => {
       return res.status(400).json({ message: "Profile picture file is required" });
     }
 
-    const baseUrl = `${req.protocol}://${req.get("host")}`;
-    const profilePictureUrl = `${baseUrl}/uploads/${req.file.filename}`;
+    // Use environment variable for backend URL, fallback to request origin for local dev
+    const backendUrl = process.env.BACKEND_URL || `${req.protocol}://${req.get("host")}`;
+    const profilePictureUrl = `${backendUrl}/uploads/${req.file.filename}`;
 
     const user = await User.findByIdAndUpdate(
       userId,
