@@ -211,7 +211,7 @@ function About() {
 
         <div className="stat">
           <h3>15+</h3>
-          <p>Univerities</p>
+          <p>Universities</p>
         </div>
       </section>
 
