@@ -207,9 +207,8 @@
   cursor: pointer;
   transition: all 0.18s;
   min-height: 44px;
-}
   background-color: #f8faff;
-  font-size: 0.73rem;
+  font-size: clamp(0.68rem, 1.8vw, 0.8rem);
   font-weight: 500;
   color: #0d2257;
 }
