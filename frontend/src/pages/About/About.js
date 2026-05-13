@@ -225,7 +225,7 @@ function About() {
             </div>
             <h2 className="about-contact-title">Send us a message</h2>
             <p className="about-contact-sub">
-              Have an idea, question, or partnership request? Drop a message and we’ll get back soon.
+              Have an idea, question, or partnership r equest? Drop a message and we’ll get back soon.
             </p>
 
             <div className="about-contact-points">
