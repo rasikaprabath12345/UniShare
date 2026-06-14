@@ -214,6 +214,7 @@ function About() {
           <p>Universities</p>
         </div>
       </section>
+      
 
       {/* Contact / About Form */}
       <section className="about-contact">
